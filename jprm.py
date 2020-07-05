@@ -7,13 +7,17 @@ import zipfile
 import subprocess
 import tempfile
 import shutil
+import logging
 
 import yaml
 import click
+import click_log
 from slugify import slugify
 
 __version__ = "0.1.0"
 
+logger = logging.getLogger("jprm")
+click_log.basic_config(logger)
 
 ####################
 
@@ -59,7 +63,7 @@ def load_manifest(manifest_file_name):
         try:
             cfg = yaml.load(manifest_file, Loader=yaml.SafeLoader)
         except yaml.YAMLError as e:
-            print("ERROR: Failed to load YAML manifest {}: {{".format(manifest_file_name, e))
+            logger.error("Failed to load YAML manifest {}: {}".format(manifest_file_name, e))
             return None
     return cfg
 
@@ -70,7 +74,7 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
     else:
         cmd = command.split()
 
-    print(cmd, environment, shell, cwd)
+    logger.debug(cmd, environment, shell, cwd)
     try:
         command_output = subprocess.run(
             cmd,
@@ -81,8 +85,7 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
             cwd=cwd,
         )
     except Exception as e:
-        print(e)
-        print(command_output)
+        logger.exception(command_output, exc_info=e)
 
     return command_output.stdout.decode('utf8'), command_output.stderr.decode('utf8'), command_output.returncode
 
@@ -110,7 +113,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     if version is None:
         version = build_cfg['version']
-    
+
     if output is None:
         output = './bin/'
 
@@ -125,15 +128,15 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
     clean_command = "dotnet clean --configuration={dotnet_config} --framework={dotnet_framework}"
     stdout, stderr, retcode = run_os_command(clean_command.format(**params), cwd=path)
     if retcode:
-        print(stdout)
-        print(stderr)
+        logger.info(stdout)
+        logger.error(stderr)
         exit(1)
 
     restore_command = "dotnet restore --no-cache"
     stdout, stderr, retcode = run_os_command(restore_command.format(**params), cwd=path)
     if retcode:
-        print(stdout)
-        print(stderr)
+        logger.info(stdout)
+        logger.error(stderr)
         exit(1)
 
     build_command = "dotnet publish --nologo" \
@@ -142,11 +145,11 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     stdout, stderr, retcode = run_os_command(build_command.format(**params), cwd=path)
     if retcode:
-        print(stdout)
-        print(stderr)
+        logger.info(stdout)
+        logger.error(stderr)
         exit(1)
 
-    print(stdout)
+    logger.info(stdout)
 
 
 def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=None, bundle=False):
@@ -180,7 +183,7 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
                 os.makedirs(artifact_temp_dir)
 
             shutil.copy(artifact_path, artifact_temp_path)
-        
+
         meta = generate_metadata(build_cfg, version=version)
         meta_tempfile = os.path.join(tempdir, 'meta.json')
         with open(meta_tempfile, 'w') as fh:
@@ -189,7 +192,7 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
         try:
             zip_path(output_path, tempdir)
         except FileNotFoundError as e:
-            print(e)
+            logger.error(e)
             exit(1)
 
         md5 = checksum_file(output_path, checksum_type='md5')
@@ -199,15 +202,17 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
             fh.write(b' *')
             fh.write(md5.encode())
             fh.write(b'\n')
-        
+
         shutil.move(meta_tempfile, output_path + '.meta.json')
+
+    return output_path
 
 
 def generate_metadata(build_cfg, version=None, build_date=None):
 
     if version is None:
         version = build_cfg['version']
-    
+
     if build_date is None:
         build_date = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
 
@@ -241,14 +246,16 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
         if os.path.exists(meta_filename):
             with open(meta_filename) as fh:
                 meta = json.load(fh)
-                print("Read meta from `{}`".format(meta_filename))
+                logger.info("Read meta from `{}`".format(meta_filename))
+                logger.debug(meta)
 
     if meta is None:
         with zipfile.ZipFile(filename, 'r') as zf:
             if 'meta.json' in zf.namelist():
                 with zf.open('meta.json', 'r') as fh:
                     meta = json.load(fh)
-                    print("Read meta from `{}:meta.json`".format(filename))
+                    logger.info("Read meta from `{}:meta.json`".format(filename))
+                    logger.debug(meta)
 
     if meta is None:
         raise ValueError('Metadata not provided')
@@ -256,9 +263,9 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
     # TODO: Read .md5sum file
     if md5 is None:
         md5 = checksum_file(filename)
-    
+
     if not repo_url:
-        print("Warning: repo url not provided.")
+        logger.warning("repo url not provided.")
 
     manifest = {
         "guid": meta['guid'],
@@ -269,7 +276,7 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
         "category": meta['category'],
 
         "versions": [{
-            
+
             "version": meta['version'],
             "changelog": meta['changelog'],
             "targetAbi": meta['targetAbi'],
@@ -300,7 +307,7 @@ def update_plugin_manifest(old, new):
         ver = old_versions.pop(0)
         if ver['version'] not in new_version_numbers:
             old['versions'].append(ver)
-    
+
     while new_versions:
         ver = new_versions.pop(0)
         old['versions'].append(ver)
@@ -313,7 +320,7 @@ def update_plugin_manifest(old, new):
 
 @click.group()
 @click.version_option(version=__version__, prog_name='Jellyfin Plugin Repository Manager')
-#@click_log.simple_verbosity_option(logger)
+@click_log.simple_verbosity_option(logger)
 def cli():
     pass
 
@@ -350,7 +357,8 @@ def cli_plugin():
 def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, version):
     with tempfile.TemporaryDirectory() as bintemp:
         build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework, version=version)
-        package_plugin(path, version=version, binary_path=bintemp, output=output)
+        filename = package_plugin(path, version=version, binary_path=bintemp, output=output)
+        click.echo(filename)
 
 
 @cli.group('repo')
@@ -374,11 +382,11 @@ class RepoPathParam(click.ParamType):
                 self.fail('Can not find repository at `{}`. Try initializing the repo first.'.format(value))
             elif does_exist and not self.should_exist:
                 self.fail('There is already an existing repository at `{}`.'.format(value), param, ctx)
-        
+
         dirname = os.path.dirname(value)
         if not os.path.exists(dirname):
             self.fail('The directory `{}` does not exist.'.format(dirname), param, ctx)
-        
+
         return value
 
 
@@ -407,7 +415,7 @@ def cli_repo_init(repo_path):
 
     with open(repo_path, 'w') as fh:
         json.dump([], fh)
-        print("Initialized `{}`.".format(repo_path))
+        logger.info("Initialized `{}`.".format(repo_path))
 
 
 @cli_repo.command('add')
@@ -427,22 +435,30 @@ def cli_repo_init(repo_path):
 )
 def cli_repo_add(repo_path, plugins, url):
     with open(repo_path, 'r') as fh:
+        logger.debug('Reading repo manifest from {}'.format(repo_path))
         repo_manifest = json.load(fh)
-    
+
     for plugin_file in plugins:
-        print(plugin_file)
+        logger.info("Processing {}".format(plugin_file))
         plugin_manifest = generate_plugin_manifest(plugin_file, repo_url=url)
-        #print(plugin_manifest)
+        logger.debug(plugin_manifest)
 
         # TODO: Add support for separate repo file path
         repo_dir = os.path.dirname(repo_path)
         name = plugin_manifest['name']
         slug = slugify(name)
+        version = plugin_manifest['versions'][0]['version']
+
+        logger.info("Adding {plugin} version {version} to {repo}".format(
+            plugin=name,
+            version=version,
+            repo=repo_path,
+        ))
 
         plugin_dir = os.path.join(repo_dir, slug)
         plugin_target = os.path.join(plugin_dir, '{slug}_{version}.zip'.format(
             slug=slug,
-            version=plugin_manifest['versions'][0]['version']
+            version=version
         ))
 
         if not os.path.exists(plugin_dir):
@@ -454,13 +470,15 @@ def cli_repo_add(repo_path, plugins, url):
             if p_manifest.get('name') == name:
                 update_plugin_manifest(p_manifest, plugin_manifest)
                 updated = True
-        
+
         if not updated:
             repo_manifest.append(plugin_manifest)
-    
+
     tmpfile = repo_path + '.tmp'
     with open(tmpfile, 'w') as fh:
+        logging.debug('Writing repo manifest to {}'.format(tmpfile))
         json.dump(repo_manifest, fh, indent=4)
+    logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
     os.rename(tmpfile, repo_path)
 
 
