@@ -318,7 +318,12 @@ def cli():
     pass
 
 
-@cli.command('build')
+@cli.group('plugin')
+def cli_plugin():
+    pass
+
+
+@cli_plugin.command('build')
 @click.argument('path',
     nargs=1,
     required=False,
@@ -342,14 +347,14 @@ def cli():
     default='netstandard2.1',
     help='Dotnet framework',
 )
-def build(path, output, dotnet_configuration, dotnet_framework, version):
+def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, version):
     with tempfile.TemporaryDirectory() as bintemp:
         build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework, version=version)
         package_plugin(path, version=version, binary_path=bintemp, output=output)
 
 
 @cli.group('repo')
-def repo():
+def cli_repo():
     pass
 
 
@@ -390,13 +395,13 @@ class ZipFileParam(click.ParamType):
         return True
 
 
-@repo.command('init')
+@cli_repo.command('init')
 @click.argument('repo_path',
     nargs=1,
     required=True,
     type=RepoPathParam(should_exist=False),
 )
-def repo_init(repo_path):
+def cli_repo_init(repo_path):
     if os.path.exists(repo_path):
         raise click.BadParameter("File already exists: `{}`".format(repo_path))
 
@@ -405,7 +410,7 @@ def repo_init(repo_path):
         print("Initialized `{}`.".format(repo_path))
 
 
-@repo.command('add')
+@cli_repo.command('add')
 @click.argument('repo_path',
     nargs=1,
     required=True,
@@ -420,14 +425,14 @@ def repo_init(repo_path):
     default='',
     help='Repository public base URL',
 )
-def repo_add(repo_path, plugins, url):
+def cli_repo_add(repo_path, plugins, url):
     with open(repo_path, 'r') as fh:
         repo_manifest = json.load(fh)
     
-    for plugin in plugins:
-        print(plugin)
-        plugin_manifest = generate_plugin_manifest(plugin, repo_url=url)
-        print(plugin_manifest)
+    for plugin_file in plugins:
+        print(plugin_file)
+        plugin_manifest = generate_plugin_manifest(plugin_file, repo_url=url)
+        #print(plugin_manifest)
 
         # TODO: Add support for separate repo file path
         repo_dir = os.path.dirname(repo_path)
@@ -442,7 +447,7 @@ def repo_add(repo_path, plugins, url):
 
         if not os.path.exists(plugin_dir):
             os.makedirs(plugin_dir)
-        shutil.copy(plugin, plugin_target)
+        shutil.copy(plugin_file, plugin_target)
 
         updated = False
         for p_manifest in repo_manifest:
@@ -459,6 +464,7 @@ def repo_add(repo_path, plugins, url):
     os.rename(tmpfile, repo_path)
 
 
+####################
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 ```
 VERSION=3.0.0.0-$(date -u +%Y%m%d%H%M%S)
 
-python3 jprm.py build jellyfin-plugin-bookshelf/ --output=artifacts --version=$VERSION
+python3 jprm.py plugin build jellyfin-plugin-bookshelf/ --output=artifacts --version=$VERSION
 
 mkdir -p test
 python3 jprm.py repo init test
