@@ -8,11 +8,14 @@ import subprocess
 import tempfile
 import shutil
 import logging
+from functools import total_ordering
+import re
 
 import yaml
 import click
 import click_log
 from slugify import slugify
+import tabulate
 
 __version__ = "0.1.0"
 
@@ -99,6 +102,180 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
 #     else:
 #         p.wait()
 #         return p.returncode
+
+
+####################
+
+
+@total_ordering
+class Version(object):
+    version_re = re.compile(r'^(?P<major>[0-9]+)(\.(?P<minor>[0-9]+)(\.(?P<build>[0-9]+)(\.(?P<revision>[0-9]+))?)?)?$')
+
+    major = None
+    minor = None
+    build = None
+    revision = None
+
+    def __init__(self, version):
+        if isinstance(version, Version):
+            self.major = version.major
+            self.minor = version.minor
+            self.build = version.build
+            self.revision = version.revision
+
+        elif isinstance(version, str):
+            match = self.version_re.match(version)
+            if not match:
+                raise ValueError(version)
+
+            gd = match.groupdict()
+            self.major = int(gd.get('major'))
+            self.minor = int(gd.get('minor'))
+            self.build = int(gd.get('build'))
+            self.revision = int(gd.get('revision'))
+
+        else:
+            raise TypeError(version)
+
+    def full(self):
+        return '{major}.{minor}.{build}.{revision}'.format(
+            major = self.major or 0,
+            minor = self.minor or 0,
+            build = self.build or 0,
+            revision = self.revision or 0,
+        )
+
+    def __str__(self):
+        if self.revision is not None:
+            return '{major}.{minor}.{build}.{revision}'.format(**self)
+        if self.build is not None:
+            return '{major}.{minor}.{build}'.format(**self)
+        if self.minor is not None:
+            return '{major}.{minor}'.format(**self)
+        else:
+            return '{major}'.format(**self)
+
+    def __repr__(self):
+        return "<{}({})>".format(self.__class__.__name__, repr(str(self)))
+
+
+    def __iter__(self):
+        return iter(self.values())
+
+    def __getitem__(self, key):
+        if key in ('major', 0):
+            return self.major
+
+        if key in ('minor', 1):
+            return self.minor
+
+        if key in ('build', 2):
+            return self.build
+
+        if key in ('revision', 3):
+            return self.revision
+
+        raise KeyError
+
+    def __setitem__(self, key, value):
+        if key not in self:
+            raise KeyError(key)
+
+        if value is not None:
+            value = int(value)
+
+        if key in ('major', 0):
+            self.major = value
+            if value is None:
+                self.minor = None
+                self.build = None
+                self.revision = None
+
+        if key in ('minor', 1):
+            self.minor = value
+            if value is None:
+                self.build = None
+                self.revision = None
+
+        if key in ('build', 2):
+            self.build = value
+            if value is None:
+                self.revision = None
+
+        if key in ('revision', 3):
+            self.revision = value
+
+    def __delitem__(self, key):
+        self[key] = None
+
+    def __len__(self):
+        return 4
+
+    def __contains__(self, key):
+        return key in ('major', 'minor', 'build', 'revision', 0, 1, 2, 3)
+
+    def keys(self):
+        return ('major', 'minor', 'build', 'revision')
+
+    def values(self):
+        return (self.major, self.minor, self.build, self.revision)
+
+    def items(self):
+        return (
+            ('major', self.major),
+            ('minor', self.minor)
+            ('build', self.build),
+            ('revision', self.revision),
+        )
+
+    def get(self, key, default=None):
+        if not key in self:
+            logger.warn('Accessing non-existant key `{}` of `{!r}`'.format(key, self))
+            return default
+
+        return self[key]
+
+    @staticmethod
+    def _hasattrs(obj, *names):
+        for name in names:
+            if not hasattr(obj, name):
+                return False
+        return True
+
+    def __eq__(self, other):
+        if self._hasattrs(other, 'major', 'minor', 'build', 'revision'):
+            return (
+                self.major or 0,
+                self.minor or 0,
+                self.build or 0,
+                self.revision or 0,
+            ) == (
+                other.major or 0,
+                other.minor or 0,
+                other.build or 0,
+                other.revision or 0,
+            )
+
+        return NotImplemented
+
+    def __lt__(self, other):
+        if self._hasattrs(other, 'major', 'minor', 'build', 'revision'):
+            return (
+                self.major or 0,
+                self.minor or 0,
+                self.build or 0,
+                self.revision or 0,
+            ) < (
+                other.major or 0,
+                other.minor or 0,
+                other.build or 0,
+                other.revision or 0,
+            )
+
+        return NotImplemented
+
+    def pop(self, k, d=KeyError):
+        raise NotImplementedError
 
 
 ####################
@@ -480,6 +657,52 @@ def cli_repo_add(repo_path, plugins, url):
         json.dump(repo_manifest, fh, indent=4)
     logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
     os.rename(tmpfile, repo_path)
+
+
+@cli_repo.command('list')
+@click.argument('repo_path',
+    nargs=1,
+    required=True,
+    type=RepoPathParam(should_exist=True),
+)
+@click.argument('plugin',
+    nargs=1,
+    required=False,
+    default=None,
+)
+def cli_repo_add(repo_path, plugin):
+    with open(repo_path, 'r') as fh:
+        logger.debug('Reading repo manifest from {}'.format(repo_path))
+        repo_manifest = json.load(fh)
+
+    if plugin is not None:
+        items = [ item for item in repo_manifest if plugin in [item.get('name'), item.get('guid'), slugify(item.get('name'))] ]
+        if items:
+            item = items[0]
+            for version in item.get('versions', []):
+                click.echo(version.get('version'))
+        else:
+            click.UsageError('PLUGIN `{}` not found in `{}`'.format(plugin, repo_path))
+
+    else:
+        table = []
+        for item in repo_manifest:
+            name = item.get('name')
+            guid = item.get('guid')
+            versions = sorted(
+                [ release.get('version', '0.0') for release in item.get('versions', []) ],
+                key = lambda rel: Version(rel),
+                reverse = True,
+            )
+
+            if versions:
+                version = versions[0]
+            else:
+                version = ''
+
+            table.append([name, version, slugify(name), guid])
+
+        click.echo(tabulate.tabulate(table, headers=('NAME', 'VERSION', 'SLUG', 'GUID'), tablefmt='plain', colalign=('left','right','left')))
 
 
 ####################
