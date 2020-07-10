@@ -77,7 +77,7 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
     else:
         cmd = command.split()
 
-    logger.debug(cmd, environment, shell, cwd)
+    logger.debug(['run_os_command', cmd, environment, shell, cwd])
     try:
         command_output = subprocess.run(
             cmd,
@@ -129,10 +129,10 @@ class Version(object):
                 raise ValueError(version)
 
             gd = match.groupdict()
-            self.major = int(gd.get('major'))
-            self.minor = int(gd.get('minor'))
-            self.build = int(gd.get('build'))
-            self.revision = int(gd.get('revision'))
+            self.major = int(gd.get('major')) if gd.get('major') else None
+            self.minor = int(gd.get('minor')) if gd.get('minor') else None
+            self.build = int(gd.get('build')) if gd.get('build') else None
+            self.revision = int(gd.get('revision')) if gd.get('revision') else None
 
         else:
             raise TypeError(version)
@@ -301,6 +301,16 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
         'output': output,
         'version': version,
     }
+
+    sln_file = None
+    for fn in os.listdir(path):
+        if fn.endswith('.sln'):
+            sln_file = os.path.join(path, fn)
+            break
+
+    if sln_file is not None:
+        for project in solution_get_projects(sln_file):
+            set_project_version(project, version=version)
 
     clean_command = "dotnet clean --configuration={dotnet_config} --framework={dotnet_framework}"
     stdout, stderr, retcode = run_os_command(clean_command.format(**params), cwd=path)
@@ -489,7 +499,110 @@ def update_plugin_manifest(old, new):
         ver = new_versions.pop(0)
         old['versions'].append(ver)
 
+    old['versions'].sort(key=lambda l: Version(l['version']), reverse=True)
     return old
+
+
+_project_version_re = re.compile(r'\<Version\>(?P<version>.*?)\</Version\>')
+_project_file_version_re = re.compile(r'\<FileVersion\>(?P<version>.*?)\</FileVersion\>')
+_project_assembly_version_re = re.compile(r'\<AssemblyVersion\>(?P<version>.*?)\</AssemblyVersion\>')
+_project_version_pattern = '<Version>{version}</Version>'
+_project_file_version_pattern = '<FileVersion>{version}</FileVersion>'
+_project_assembly_version_pattern = '<AssemblyVersion>{version}</AssemblyVersion>'
+
+def set_project_version(project_file, version):
+    version = Version(version)
+    logger.info("Setting project version to {}".format(version.full()))
+
+    with open(project_file, 'r') as fh:
+        pdata = fh.read()
+
+    ver_matches = list(_project_version_re.finditer(pdata))
+    file_ver_matches = list(_project_file_version_re.finditer(pdata))
+    ass_ver_matches = list(_project_assembly_version_re.finditer(pdata))
+    if len(ver_matches) > 1 or len(file_ver_matches) > 1 or len(ass_ver_matches) > 1:
+        logger.error('Found multiple instances of the version tag(s), bailing.')
+        return None
+
+    if ver_matches:
+        old_version = ver_matches[0]['version']
+        logger.debug('Old version: {}'.format(old_version))
+    else:
+        old_version = None
+
+    if file_ver_matches:
+        old_file_version = file_ver_matches[0]['version']
+        logger.debug('Old file version: {}'.format(old_file_version))
+    else:
+        old_file_version = None
+
+    if ass_ver_matches:
+        old_assembly_version = ass_ver_matches[0]['version']
+        logger.debug('Old assembly version: {}'.format(old_assembly_version))
+    else:
+        old_assembly_version = None
+
+    pdata = _project_version_re.sub(_project_version_pattern.format(version=version.full()), pdata)
+    pdata = _project_file_version_re.sub(_project_file_version_pattern.format(version=version.full()), pdata)
+    pdata = _project_assembly_version_re.sub(_project_assembly_version_pattern.format(version=version.full()), pdata)
+
+    with open(project_file, 'w') as fh:
+        fh.write(pdata)
+
+    return (old_version, old_file_version, old_assembly_version)
+
+
+_solution_file_project_re = re.compile(r'\s*Project\("[^"]*"\)\s*=\s*"(?P<project_name>[^"]*)",\s*"(?P<project_file>[^"]+proj)",\s*"[^"]*"\s*')
+def solution_get_projects(sln_file):
+    with open(sln_file, 'r') as fh:
+        data = fh.read()
+
+    sln_dir = os.path.dirname(sln_file)
+    matches = _solution_file_project_re.finditer(data)
+    for match in matches:
+        gd = match.groupdict()
+        project_file = os.path.join(sln_dir, gd.get('project_file').replace('\\', os.path.sep))
+        yield project_file
+
+
+####################
+
+
+class RepoPathParam(click.ParamType):
+    name = 'repo_path'
+
+    def __init__(self, should_exist=None):
+        self.should_exist = should_exist
+
+    def convert(self, value, param, ctx):
+        if not value.endswith('.json'):
+            value = os.path.join(value, 'manifest.json')
+
+        if self.should_exist is not None:
+            does_exist = os.path.exists(value)
+            if self.should_exist and not does_exist:
+                self.fail('Can not find repository at `{}`. Try initializing the repo first.'.format(value))
+            elif does_exist and not self.should_exist:
+                self.fail('There is already an existing repository at `{}`.'.format(value), param, ctx)
+
+        dirname = os.path.dirname(value)
+        if not os.path.exists(dirname):
+            self.fail('The directory `{}` does not exist.'.format(dirname), param, ctx)
+
+        return value
+
+
+class ZipFileParam(click.ParamType):
+    def validate(self, value, param, ctx):
+        if not os.path.exists(value):
+            self.fail('No such file: `{}`'.format(value))
+            return False
+
+        if not zipfile.is_zipfile(value):
+            self.fail('`{}` is not a zip file.'.format(value))
+            return False
+
+        return True
 
 
 ####################
@@ -541,43 +654,6 @@ def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, versi
 @cli.group('repo')
 def cli_repo():
     pass
-
-
-class RepoPathParam(click.ParamType):
-    name = 'repo_path'
-
-    def __init__(self, should_exist=None):
-        self.should_exist = should_exist
-
-    def convert(self, value, param, ctx):
-        if not value.endswith('.json'):
-            value = os.path.join(value, 'manifest.json')
-
-        if self.should_exist is not None:
-            does_exist = os.path.exists(value)
-            if self.should_exist and not does_exist:
-                self.fail('Can not find repository at `{}`. Try initializing the repo first.'.format(value))
-            elif does_exist and not self.should_exist:
-                self.fail('There is already an existing repository at `{}`.'.format(value), param, ctx)
-
-        dirname = os.path.dirname(value)
-        if not os.path.exists(dirname):
-            self.fail('The directory `{}` does not exist.'.format(dirname), param, ctx)
-
-        return value
-
-
-class ZipFileParam(click.ParamType):
-    def validate(self, value, param, ctx):
-        if not os.path.exists(value):
-            self.fail('No such file: `{}`'.format(value))
-            return False
-
-        if not zipfile.is_zipfile(value):
-            self.fail('`{}` is not a zip file.'.format(value))
-            return False
-
-        return True
 
 
 @cli_repo.command('init')
@@ -702,7 +778,8 @@ def cli_repo_add(repo_path, plugin):
 
             table.append([name, version, slugify(name), guid])
 
-        click.echo(tabulate.tabulate(table, headers=('NAME', 'VERSION', 'SLUG', 'GUID'), tablefmt='plain', colalign=('left','right','left')))
+        if table:
+            click.echo(tabulate.tabulate(table, headers=('NAME', 'VERSION', 'SLUG', 'GUID'), tablefmt='plain', colalign=('left','right','left')))
 
 
 ####################
