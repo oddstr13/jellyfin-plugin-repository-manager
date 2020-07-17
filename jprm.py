@@ -369,7 +369,7 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
             if not os.path.exists(artifact_temp_dir):
                 os.makedirs(artifact_temp_dir)
 
-            shutil.copy(artifact_path, artifact_temp_path)
+            shutil.copyfile(artifact_path, artifact_temp_path)
 
         meta = generate_metadata(build_cfg, version=version)
         meta_tempfile = os.path.join(tempdir, 'meta.json')
@@ -716,7 +716,7 @@ def cli_repo_add(repo_path, plugins, url):
 
         if not os.path.exists(plugin_dir):
             os.makedirs(plugin_dir)
-        shutil.copy(plugin_file, plugin_target)
+        shutil.copyfile(plugin_file, plugin_target)
 
         updated = False
         for p_manifest in repo_manifest:
