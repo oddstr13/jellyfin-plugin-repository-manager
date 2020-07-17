@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2020 - Odd Strabo <oddstr13@openshell.no>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
 import os
 import json
 import hashlib
@@ -17,10 +25,11 @@ import click_log
 from slugify import slugify
 import tabulate
 
-__version__ = "0.1.0"
-
 logger = logging.getLogger("jprm")
 click_log.basic_config(logger)
+
+__version__ = "0.2.0"
+
 
 ####################
 

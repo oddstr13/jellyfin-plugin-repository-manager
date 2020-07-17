@@ -1,0 +1,6 @@
+
+Click ~= 7.0
+click-log ~= 0.3.2
+PyYAML ~= 5.1
+python-slugify ~= 3.0
+tabulate ~= 0.8.6
