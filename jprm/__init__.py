@@ -29,6 +29,7 @@ logger = logging.getLogger("jprm")
 click_log.basic_config(logger)
 
 __version__ = "0.2.0"
+JSON_METADATA_FILE = "meta.json"
 
 
 ####################
@@ -102,17 +103,6 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
     return command_output.stdout.decode('utf8'), command_output.stderr.decode('utf8'), command_output.returncode
 
 
-# def cmd(args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, encoding=None):
-#     p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
-#     if p.stdout is not None:
-#         if encoding is not None:
-#             p.stdout.read().decode(encoding)
-#         return p.stdout.read()
-#     else:
-#         p.wait()
-#         return p.returncode
-
-
 ####################
 
 
@@ -166,7 +156,6 @@ class Version(object):
 
     def __repr__(self):
         return "<{}({})>".format(self.__class__.__name__, repr(str(self)))
-
 
     def __iter__(self):
         return iter(self.values())
@@ -232,13 +221,13 @@ class Version(object):
     def items(self):
         return (
             ('major', self.major),
-            ('minor', self.minor)
+            ('minor', self.minor),
             ('build', self.build),
             ('revision', self.revision),
         )
 
     def get(self, key, default=None):
-        if not key in self:
+        if key not in self:
             logger.warn('Accessing non-existant key `{}` of `{!r}`'.format(key, self))
             return default
 
@@ -302,7 +291,6 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     if output is None:
         output = './bin/'
-
 
     params = {
         'dotnet_config': dotnet_config,
@@ -381,7 +369,7 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
             shutil.copyfile(artifact_path, artifact_temp_path)
 
         meta = generate_metadata(build_cfg, version=version)
-        meta_tempfile = os.path.join(tempdir, 'meta.json')
+        meta_tempfile = os.path.join(tempdir, JSON_METADATA_FILE)
         with open(meta_tempfile, 'w') as fh:
             json.dump(meta, fh, sort_keys=True, indent=4)
 
@@ -399,7 +387,7 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
             fh.write(md5.encode())
             fh.write(b'\n')
 
-        shutil.move(meta_tempfile, output_path + '.meta.json')
+        shutil.move(meta_tempfile, '{filename}.{meta}'.format(filename=output_path, meta=JSON_METADATA_FILE))
 
     return output_path
 
@@ -411,8 +399,6 @@ def generate_metadata(build_cfg, version=None, build_date=None):
 
     if build_date is None:
         build_date = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
-
-    slug = slugify(build_cfg['name'])
 
     meta = {
         "guid": build_cfg['guid'],
@@ -438,7 +424,7 @@ def generate_metadata(build_cfg, version=None, build_date=None):
 
 def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
     if meta is None:
-        meta_filename = filename + '.meta.json'
+        meta_filename = '{filename}.{meta}'.format(filename=filename, meta=JSON_METADATA_FILE)
         if os.path.exists(meta_filename):
             with open(meta_filename) as fh:
                 meta = json.load(fh)
@@ -447,10 +433,10 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
 
     if meta is None:
         with zipfile.ZipFile(filename, 'r') as zf:
-            if 'meta.json' in zf.namelist():
-                with zf.open('meta.json', 'r') as fh:
+            if JSON_METADATA_FILE in zf.namelist():
+                with zf.open(JSON_METADATA_FILE, 'r') as fh:
                     meta = json.load(fh)
-                    logger.info("Read meta from `{}:meta.json`".format(filename))
+                    logger.info("Read meta from `{}:{}`".format(filename, JSON_METADATA_FILE))
                     logger.debug(meta)
 
     if meta is None:
@@ -519,6 +505,7 @@ _project_version_pattern = '<Version>{version}</Version>'
 _project_file_version_pattern = '<FileVersion>{version}</FileVersion>'
 _project_assembly_version_pattern = '<AssemblyVersion>{version}</AssemblyVersion>'
 
+
 def set_project_version(project_file, version):
     version = Version(version)
     logger.info("Setting project version to {}".format(version.full()))
@@ -562,6 +549,8 @@ def set_project_version(project_file, version):
 
 
 _solution_file_project_re = re.compile(r'\s*Project\("[^"]*"\)\s*=\s*"(?P<project_name>[^"]*)",\s*"(?P<project_file>[^"]+proj)",\s*"[^"]*"\s*')
+
+
 def solution_get_projects(sln_file):
     with open(sln_file, 'r') as fh:
         data = fh.read()
@@ -621,12 +610,12 @@ class ZipFileParam(click.ParamType):
 @click.version_option(version=__version__, prog_name='Jellyfin Plugin Repository Manager')
 @click_log.simple_verbosity_option(logger)
 def cli():
-    pass
+    pass  # Command grouping
 
 
 @cli.group('plugin')
 def cli_plugin():
-    pass
+    pass  # Command grouping
 
 
 @cli_plugin.command('build')
@@ -662,7 +651,7 @@ def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, versi
 
 @cli.group('repo')
 def cli_repo():
-    pass
+    pass  # Command grouping
 
 
 @cli_repo.command('init')
@@ -755,13 +744,13 @@ def cli_repo_add(repo_path, plugins, url):
     required=False,
     default=None,
 )
-def cli_repo_add(repo_path, plugin):
+def cli_repo_list(repo_path, plugin):
     with open(repo_path, 'r') as fh:
         logger.debug('Reading repo manifest from {}'.format(repo_path))
         repo_manifest = json.load(fh)
 
     if plugin is not None:
-        items = [ item for item in repo_manifest if plugin in [item.get('name'), item.get('guid'), slugify(item.get('name'))] ]
+        items = [item for item in repo_manifest if plugin in [item.get('name'), item.get('guid'), slugify(item.get('name'))]]
         if items:
             item = items[0]
             for version in item.get('versions', []):
@@ -775,7 +764,7 @@ def cli_repo_add(repo_path, plugin):
             name = item.get('name')
             guid = item.get('guid')
             versions = sorted(
-                [ release.get('version', '0.0') for release in item.get('versions', []) ],
+                [release.get('version', '0.0') for release in item.get('versions', [])],
                 key = lambda rel: Version(rel),
                 reverse = True,
             )
@@ -788,7 +777,7 @@ def cli_repo_add(repo_path, plugin):
             table.append([name, version, slugify(name), guid])
 
         if table:
-            click.echo(tabulate.tabulate(table, headers=('NAME', 'VERSION', 'SLUG', 'GUID'), tablefmt='plain', colalign=('left','right','left')))
+            click.echo(tabulate.tabulate(table, headers=('NAME', 'VERSION', 'SLUG', 'GUID'), tablefmt='plain', colalign=('left', 'right', 'left')))
 
 
 ####################
