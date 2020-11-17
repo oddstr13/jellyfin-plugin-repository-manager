@@ -28,7 +28,7 @@ import tabulate
 logger = logging.getLogger("jprm")
 click_log.basic_config(logger)
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 JSON_METADATA_FILE = "meta.json"
 DEFAULT_FRAMEWORK = "netstandard2.1"
 
@@ -306,6 +306,8 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
         'version': version,
     }
 
+    projects = []
+
     sln_file = None
     for fn in os.listdir(path):
         if fn.endswith('.sln'):
@@ -313,9 +315,16 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
             break
 
     if sln_file is not None:
-        for project in solution_get_projects(sln_file):
-            set_project_version(project, version=version)
-            set_project_framework(project, framework=dotnet_framework)
+        projects.extend(solution_get_projects(sln_file))
+    else:
+        for fn in os.listdir(path):
+            if fn.endswith('.csproj'):
+                projects.append(os.path.join(path, fn))
+                break
+
+    for project in projects:
+        set_project_version(project, version=version)
+        set_project_framework(project, framework=dotnet_framework)
 
     clean_command = "dotnet clean --configuration={dotnet_config} --framework={dotnet_framework}"
     stdout, stderr, retcode = run_os_command(clean_command.format(**params), cwd=path)
