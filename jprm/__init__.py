@@ -28,8 +28,9 @@ import tabulate
 logger = logging.getLogger("jprm")
 click_log.basic_config(logger)
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 JSON_METADATA_FILE = "meta.json"
+DEFAULT_FRAMEWORK = "netstandard2.1"
 
 
 ####################
@@ -279,7 +280,7 @@ class Version(object):
 ####################
 
 
-def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework='netstandard2.1'):
+def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None):
     if build_cfg is None:
         build_cfg = load_manifest(os.path.join(path, "build.yaml"))
 
@@ -291,6 +292,12 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     if output is None:
         output = './bin/'
+
+    if dotnet_framework is None:
+        if 'framework' not in build_cfg:
+            logger.warning("`framework` is not specified in build manifest, defaulting to `{}`.".format(DEFAULT_FRAMEWORK))
+            logger.warning("The default target framework may change in the future.")
+        dotnet_framework = build_cfg.get('framework', DEFAULT_FRAMEWORK)
 
     params = {
         'dotnet_config': dotnet_config,
@@ -308,6 +315,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
     if sln_file is not None:
         for project in solution_get_projects(sln_file):
             set_project_version(project, version=version)
+            set_project_framework(project, framework=dotnet_framework)
 
     clean_command = "dotnet clean --configuration={dotnet_config} --framework={dotnet_framework}"
     stdout, stderr, retcode = run_os_command(clean_command.format(**params), cwd=path)
@@ -548,6 +556,35 @@ def set_project_version(project_file, version):
     return (old_version, old_file_version, old_assembly_version)
 
 
+_project_framework_re = re.compile(r'\<TargetFramework\>(?P<framework>.*?)\</TargetFramework\>')
+_project_framework_pattern = '<TargetFramework>{framework}</TargetFramework>'
+
+
+def set_project_framework(project_file, framework):
+    logger.info("Setting project framework to {}".format(framework))
+
+    with open(project_file, 'r') as fh:
+        pdata = fh.read()
+
+    framework_matches = list(_project_framework_re.finditer(pdata))
+    if len(framework_matches) > 1:
+        logger.error('Found multiple instances of the TargetFramework tag, bailing.')
+        return None
+
+    if framework_matches:
+        old_framework = framework_matches[0]['framework']
+        logger.debug('Old framework: {}'.format(old_framework))
+    else:
+        old_framework = None
+
+    pdata = _project_framework_re.sub(_project_framework_pattern.format(framework=framework), pdata)
+
+    with open(project_file, 'w') as fh:
+        fh.write(pdata)
+
+    return old_framework
+
+
 _solution_file_project_re = re.compile(r'\s*Project\("[^"]*"\)\s*=\s*"(?P<project_name>[^"]*)",\s*"(?P<project_file>[^"]+proj)",\s*"[^"]*"\s*')
 
 
@@ -639,8 +676,8 @@ def cli_plugin():
     help='Dotnet configuration',
 )
 @click.option('--dotnet-framework',
-    default='netstandard2.1',
-    help='Dotnet framework',
+    default=None,
+    help='Dotnet framework ({})'.format(DEFAULT_FRAMEWORK),
 )
 def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, version):
     with tempfile.TemporaryDirectory() as bintemp:
