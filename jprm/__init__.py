@@ -28,8 +28,9 @@ import tabulate
 logger = logging.getLogger("jprm")
 click_log.basic_config(logger)
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 JSON_METADATA_FILE = "meta.json"
+DEFAULT_IMAGE_FILE = "image.png"
 DEFAULT_FRAMEWORK = "netstandard2.1"
 
 
@@ -369,6 +370,20 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
     if output is None:
         output = './artifacts/'
 
+    image_path = None
+    if "image" in build_cfg:
+        image_path = os.path.join(path, build_cfg['image'])
+        if not os.path.exists(image_path):
+            logger.error("Image `{}` not found at expected path `{}`.".format(build_cfg['image'], image_path))
+            exit(1)
+
+    if image_path is None:
+        image_path = os.path.join(path, DEFAULT_IMAGE_FILE)
+        if os.path.exists(image_path):
+            logger.info("Image autodetected at path `{}`.".format(image_path))
+        else:
+            image_path = None
+
     slug = slugify(build_cfg['name'])
 
     output_file = "{slug}_{version}.zip".format(slug=slug, version=version)
@@ -384,6 +399,13 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
                 os.makedirs(artifact_temp_dir)
 
             shutil.copyfile(artifact_path, artifact_temp_path)
+
+        if image_path is not None:
+            image_name = os.path.basename(image_path)
+            image_temp_path = os.path.join(tempdir, image_name)
+            shutil.copyfile(image_path, image_temp_path)
+
+            build_cfg['image'] = image_name
 
         meta = generate_metadata(build_cfg, version=version)
         meta_tempfile = os.path.join(tempdir, JSON_METADATA_FILE)
@@ -436,6 +458,19 @@ def generate_metadata(build_cfg, version=None, build_date=None):
 #        "checksum": bin_md5sum,
         "timestamp": build_date,
     }
+
+    if "imageUrl" in build_cfg:
+        meta['imageUrl'] = build_cfg['imageUrl']
+
+    if "image" in build_cfg:
+        meta['image'] = build_cfg['image']
+
+    elif "imageUrl" not in build_cfg:
+        logger.warning("Neither image nor imageUrl is specified.")
+
+    if "image" in meta and "imageUrl" in meta:
+        logger.warning("Both image and imageUrl is specified.")
+
     return meta
 
 
@@ -466,6 +501,8 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
     if not repo_url:
         logger.warning("repo url not provided.")
 
+    slug = slugify(meta['name'])
+
     manifest = {
         "guid": meta['guid'],
         "name": meta['name'],
@@ -475,19 +512,36 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
         "category": meta['category'],
 
         "versions": [{
-
             "version": meta['version'],
             "changelog": meta['changelog'],
             "targetAbi": meta['targetAbi'],
             "sourceUrl": "{url}/{slug}/{slug}_{version}.zip".format(
                 url=repo_url.rstrip('/'),
-                slug=slugify(meta['name']),
+                slug=slug,
                 version=meta['version'],
             ),
             "checksum": md5,
             "timestamp": meta['timestamp'],
         }]
     }
+
+    if "imageUrl" in meta:
+        manifest['imageUrl'] = meta['imageUrl']
+
+    if "image" in meta:
+        manifest['image'] = meta['image']
+
+        manifest['imageUrl'] = "{url}/{slug}/{image}".format(
+            url=repo_url.rstrip('/'),
+            slug=slug,
+            image=meta['image'],
+        )
+
+        if "imageUrl" in meta:
+            logger.warning("Image URL `{}` is getting overwritten by `{}` due to presence of `image`.", meta['imageUrl'], manifest['imageUrl'])
+
+    elif "imageUrl" not in meta:
+        logger.warning("Neither image nor imageUrl is specified.")
 
     return manifest
 
@@ -761,6 +815,37 @@ def cli_repo_add(repo_path, plugins, url):
         if not os.path.exists(plugin_dir):
             os.makedirs(plugin_dir)
         shutil.copyfile(plugin_file, plugin_target)
+
+        if "image" in plugin_manifest:
+            image_data = None
+            with zipfile.ZipFile(plugin_file, 'r') as zf:
+                if plugin_manifest["image"] in zf.namelist():
+                    with zf.open(plugin_manifest["image"], 'r') as fh:
+                        image_data = fh.read()
+                        logger.info("Read image from `{}:{}`".format(plugin_file, plugin_manifest["image"]))
+
+            if image_data is not None:
+                image_target_path = os.path.join(plugin_dir, plugin_manifest["image"])
+
+                write_image = True
+                if os.path.exists(image_target_path):
+                    existing_image_size = os.stat(image_target_path).st_size
+                    if existing_image_size == len(image_data):
+                        with open(image_target_path, "rb") as fh:
+                            existing_image = fh.read()
+
+                        if existing_image == image_data:
+                            write_image = False
+                            logger.info("Existing image same as new, skipping copy.")
+                        del existing_image
+                    else:
+                        logger.info("Existing image differs in size ({}).".format(existing_image_size))
+
+                if write_image:
+                    logger.info("Writing image to `{}`.".format(image_target_path))
+                    with open(image_target_path, "wb") as fh:
+                        fh.write(image_data)
+                del image_data
 
         updated = False
         for p_manifest in repo_manifest:
