@@ -538,7 +538,7 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
         )
 
         if "imageUrl" in meta:
-            logger.warning("Image URL `{}` is getting overwritten by `{}` due to presence of `image`.", meta['imageUrl'], manifest['imageUrl'])
+            logger.warning("Image URL `{}` is getting overwritten by `{}` due to presence of `image`.".format(meta['imageUrl'], manifest['imageUrl']))
 
     elif "imageUrl" not in meta:
         logger.warning("Neither image nor imageUrl is specified.")
