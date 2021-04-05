@@ -1,0 +1,104 @@
+name: Publish Python Package
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+#    if: ${{ github.repository == 'oddstr13/jellyfin-plugin-repository-manager' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+
+      - name: Build package
+        run: |
+          python setup.py sdist bdist_wheel
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build-publish-artifact
+          retention-days: 30
+          if-no-files-found: error
+          path: dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-20.04
+    environment: release
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-publish-artifact
+
+      - name: Install Twine
+        run: pip install twine
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          twine upload dist/*
+
+      - name: Set Version EnvVar
+        run: echo "JPRM_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Build Container Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2.4
+        with:
+          image: jellyfin-plugin-repository-manager
+          tags: latest ${{ env.JPRM_VERSION }}
+          oci: true
+          context: .
+          dockerfiles: Containerfile
+
+      - name: Publish Image to ghcr.io
+        uses: redhat-actions/push-to-registry@v2.1.1
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Publish Image to quay.io
+        uses: redhat-actions/push-to-registry@v2.1.1
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: quay.io/jellyfin
+          username: ${{ secrets.QUAY_ROBOT }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Publish Image to docker.io
+        uses: redhat-actions/push-to-registry@v2.1.1
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: docker.io/jellyfin
+          username: ${{ secrets.HUB_USER }}
+          password: ${{ secrets.HUB_TOKEN }}
