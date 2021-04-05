@@ -22,7 +22,7 @@ setup(
     author='Odd Stråbø',
     author_email='oddstr13@openshell.no',
     description='Jellyfin Plugin Repository Manager',
-    keywords='Jellyfin plugin repository compile publish developement',
+    keywords='Jellyfin plugin repository compile publish development',
     url='https://github.com/oddstr13/jellyfin-plugin-repository-manager',
     long_description=long_description,
     long_description_content_type="text/markdown",
