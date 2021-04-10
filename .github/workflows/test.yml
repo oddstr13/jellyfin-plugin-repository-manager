@@ -2,14 +2,15 @@ name: Test JPRM
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-#    if: ${{ github.repository == 'oddstr13/jellyfin-plugin-repository-manager' }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]

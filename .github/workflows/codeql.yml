@@ -2,16 +2,18 @@ name: CodeQL Analysis
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
   schedule:
     - cron: '38 8 * * 6'
 
 jobs:
   analyze:
-    runs-on: ubuntu-20.04
-#    if: ${{ github.repository == 'oddstr13/jellyfin-plugin-repository-manager' }}
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'oddstr13/jellyfin-plugin-repository-manager' }}
     strategy:
       fail-fast: false
       matrix:
