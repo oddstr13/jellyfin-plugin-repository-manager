@@ -66,39 +66,9 @@ jobs:
       - name: Set Version EnvVar
         run: echo "JPRM_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Build Container Image
-        id: build-image
-        uses: redhat-actions/buildah-build@v2.4
+      - name: Upload GitHub Release Artifacts
+        uses: ncipollo/release-action@v1
         with:
-          image: jellyfin-plugin-repository-manager
-          tags: latest ${{ env.JPRM_VERSION }}
-          oci: true
-          context: .
-          dockerfiles: Containerfile
-
-      - name: Publish Image to ghcr.io
-        uses: redhat-actions/push-to-registry@v2.1.1
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: ghcr.io/${{ github.repository_owner }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Publish Image to quay.io
-        uses: redhat-actions/push-to-registry@v2.1.1
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: quay.io/jellyfin
-          username: ${{ secrets.QUAY_ROBOT }}
-          password: ${{ secrets.QUAY_TOKEN }}
-
-      - name: Publish Image to docker.io
-        uses: redhat-actions/push-to-registry@v2.1.1
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: docker.io/jellyfin
-          username: ${{ secrets.HUB_USER }}
-          password: ${{ secrets.HUB_TOKEN }}
+          allowUpdates: true
+          artifacts: 'dist/*'
+          tag: ${{ env.JPRM_VERSION }}
