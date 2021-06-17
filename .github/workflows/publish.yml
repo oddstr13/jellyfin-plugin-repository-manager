@@ -10,7 +10,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'oddstr13/jellyfin-plugin-repository-manager' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -38,7 +37,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: build-publish-artifact
+          name: build-artifact
           retention-days: 30
           if-no-files-found: error
           path: dist
@@ -47,11 +46,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: release
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.repository == 'oddstr13/jellyfin-plugin-repository-manager' && startsWith(github.ref, 'refs/tags/') }}
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name: build-publish-artifact
+          name: build-artifact
 
       - name: Install Twine
         run: pip install twine

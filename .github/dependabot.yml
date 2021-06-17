@@ -8,18 +8,6 @@ updates:
       prefix: chore
       include: scope
 
-  - package-ecosystem: docker
-    directory: /
-    schedule:
-      interval: weekly
-    labels:
-      - packaging
-      - docker
-      - dependencies
-    commit-message:
-      prefix: packaging
-      include: scope
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
