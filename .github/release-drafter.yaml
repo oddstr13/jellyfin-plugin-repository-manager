@@ -1,0 +1,81 @@
+name-template: 'Version $RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: ":boom: Breaking changes"
+    labels:
+      - breaking
+  - title: ":fire: Removed"
+    labels:
+      - removed
+  - title: ":rewind: Reverted Changes"
+    labels:
+      - revert
+      - reverted
+  - title: ':rocket: Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: ':bug: Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: ':toolbox: Maintenance'
+    labels:
+      - 'chore'
+  - title: ":arrow_up: Dependency updates"
+    labels:
+      - dependencies # Default label used by Dependabot
+  - title: ":construction_worker: CI & build changes"
+    labels:
+      - ci
+      - build
+  - title: ":memo: Documentation updates"
+    labels:
+      - documentation
+  - title: ":white_check_mark: Tests"
+    labels:
+      - test
+      - tests
+exclude-labels:
+  - no-changelog
+  - skip-changelog
+  - invalid
+change-template: '- $TITLE ([#$NUMBER]($URL)) @$AUTHOR'
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
+
+autolabeler:
+  - label: 'documentation'
+    files:
+      - '*.md'
+      - 'build_plugin.sh'
+  - label: 'build'
+    files:
+      - 'setup.py'
+  - label: 'ci'
+    files:
+      - '.github/*'
+  - label: 'chore'
+    files:
+      - 'tox.ini'
+      - '.gitignore'
+  - label: 'dependencies'
+    files:
+      - 'requirements.txt'
+template: |
+  ## Changes
+
+  $CHANGES
