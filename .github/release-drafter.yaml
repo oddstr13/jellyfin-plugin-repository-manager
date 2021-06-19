@@ -67,7 +67,7 @@ autolabeler:
       - 'setup.py'
   - label: 'ci'
     files:
-      - '.github/*'
+      - '.github/**'
   - label: 'chore'
     files:
       - 'tox.ini'
