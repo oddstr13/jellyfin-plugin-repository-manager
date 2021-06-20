@@ -61,4 +61,4 @@ runs:
 
     - id: out
       shell: bash
-      run: echo "::set-output name=artifact-dir::${{ inputs.output }}"
+      run: echo "::set-output name=artifact-dir::$(pwd)/${{ inputs.output }}"
