@@ -53,9 +53,12 @@ runs:
       shell: bash
       run: |-
         echo "::group::Building and Packaging"
+
         if [[ -n "${{ inputs.verion }}" ]]; then
-          echo "::set-output name=artifact::$(python3 ${{ github.action_path }}/jprm/__init__.py plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.verion }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=debug plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.verion }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
         else
-          echo "::set-output name=artifact::$(python3 ${{ github.action_path }}/jprm/__init__.py plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=debug plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
         fi
+        echo "Artifact: ${artifact}"
+        echo "::set-output name=artifact::${artifact}"
         echo "::endgroup::"
