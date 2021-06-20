@@ -5,8 +5,7 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: chore
-      include: scope
+      prefix: Dependabot
 
   - package-ecosystem: github-actions
     directory: /
@@ -17,5 +16,4 @@ updates:
       - github_actions
       - dependencies
     commit-message:
-      prefix: ci
-      include: scope
+      prefix: Dependabot
