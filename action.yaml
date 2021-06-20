@@ -1,0 +1,64 @@
+name: 'jprm-build'
+description: 'Builds a Jellyfin plugin via Jellyfin Plugin Repository Manager'
+author: 'Odd Stråbø'
+
+branding:
+  icon: package
+  color: purple
+
+inputs:
+  path:
+    required: false
+    default: '.'
+    description: 'The path to the sources of the plugin solution (default: ".")'
+  output:
+    required: false
+    default: 'artifacts'
+    description: 'Path to dotnet build directory (default: artifacts)'
+  version:
+    required: false
+    default: ''
+    description: 'Overwrite the detected version of the plugin (default: "")'
+  dotnet-config:
+    required: false
+    default: 'Release'
+    description: 'The dotnet build configuration (default: Release)'
+  dotnet-target:
+    required: false
+    default: 'net5.0'
+    description: 'The dotnet target framework used for the plugin build (default: net5.0)'
+
+outputs:
+  artifact:
+    description: 'Returns the built plugin zip'
+    value: ${{ steps.build.outputs.artifact }}
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure ouput dir exists
+      shell: bash
+      run: |-
+        echo "::group::Preparing Environment"
+        mkdir -p ${{ inputs.output }}
+
+    - name: Setup JRPM Deps
+      shell: bash
+      run: |-
+        python3 -m pip install -r ${{ github.action_path }}/requirements.txt
+        echo "::endgroup::"
+
+    - id: build
+      name: Run JPRM build
+      shell: bash
+      run: |-
+        echo "::group::Building and Packaging"
+
+        if [[ -n "${{ inputs.verion }}" ]]; then
+          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=debug plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.verion }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+        else
+          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=debug plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+        fi
+        echo "Artifact: ${artifact}"
+        echo "::set-output name=artifact::${artifact}"
+        echo "::endgroup::"
