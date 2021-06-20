@@ -29,9 +29,9 @@ inputs:
     description: 'The dotnet target framework used for the plugin build (default: net5.0)'
 
 outputs:
-  artifact-dir:
-    description: 'Returns the "output" dir the plugin package got packaged to'
-    value: ${{ steps.out.outputs.artifact-dir }}
+  artifact:
+    description: 'Returns the built plugin zip'
+    value: ${{ steps.build.outputs.artifact }}
 
 runs:
   using: composite
@@ -48,17 +48,14 @@ runs:
         python3 -m pip install -r ${{ github.action_path }}/requirements.txt
         echo "::endgroup::"
 
-    - name: Run JPRM build
+    - id: build
+      name: Run JPRM build
       shell: bash
       run: |-
         echo "::group::Building and Packaging"
         if [[ -n "${{ inputs.verion }}" ]]; then
-          python3 ${{ github.action_path }}/jprm/__init__.py plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.verion }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }}
+          echo "::set-output name=artifact::$(python3 ${{ github.action_path }}/jprm/__init__.py plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.verion }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
         else
-          python3 ${{ github.action_path }}/jprm/__init__.py plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }}
+          echo "::set-output name=artifact::$(python3 ${{ github.action_path }}/jprm/__init__.py plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
         fi
         echo "::endgroup::"
-
-    - id: out
-      shell: bash
-      run: echo "::set-output name=artifact-dir::$(pwd)/${{ inputs.output }}"
