@@ -18,6 +18,7 @@ import shutil
 import logging
 from functools import total_ordering
 import re
+import uuid
 
 import yaml
 import click
@@ -452,7 +453,7 @@ def generate_metadata(build_cfg, version=None, build_date=None):
         build_date = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
 
     meta = {
-        "guid": build_cfg['guid'],
+        "guid": str(uuid.UUID(build_cfg['guid'])),
         "name": build_cfg['name'],
         "description": build_cfg['description'],
         "overview": build_cfg['overview'],
@@ -516,7 +517,7 @@ def generate_plugin_manifest(filename, repo_url='', meta=None, md5=None):
     slug = slugify(meta['name'])
 
     manifest = {
-        "guid": meta['guid'],
+        "guid": str(uuid.UUID(meta['guid'])),
         "name": meta['name'],
         "description": meta['description'],
         "overview": meta['overview'],
@@ -815,6 +816,7 @@ def cli_repo_add(repo_path, plugins, url):
         name = plugin_manifest['name']
         slug = slugify(name)
         version = plugin_manifest['versions'][0]['version']
+        guid = uuid.UUID(plugin_manifest['guid'])
 
         logger.info("Adding {plugin} version {version} to {repo}".format(
             plugin=name,
@@ -865,7 +867,7 @@ def cli_repo_add(repo_path, plugins, url):
 
         updated = False
         for p_manifest in repo_manifest:
-            if p_manifest.get('name') == name:
+            if uuid.UUID(p_manifest.get('guid')) == guid:
                 update_plugin_manifest(p_manifest, plugin_manifest)
                 updated = True
 
@@ -897,6 +899,11 @@ def cli_repo_list(repo_path, plugin):
         repo_manifest = json.load(fh)
 
     if plugin is not None:
+        try:
+            plugin = str(uuid.UUID(plugin))
+        except ValueError:
+            pass
+
         items = [item for item in repo_manifest if plugin in [item.get('name'), item.get('guid'), slugify(item.get('name'))]]
         if items:
             item = items[0]
