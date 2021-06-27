@@ -1,4 +1,4 @@
-name: 'jprm'
+name: 'jprm-build'
 description: 'Builds a Jellyfin plugin via Jellyfin Plugin Repository Manager'
 author: 'Odd Stråbø'
 
