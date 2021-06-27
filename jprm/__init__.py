@@ -135,6 +135,9 @@ class Version(object):
             self.build = int(gd.get('build')) if gd.get('build') else None
             self.revision = int(gd.get('revision')) if gd.get('revision') else None
 
+        elif isinstance(version, int):
+            self.major = version
+
         else:
             raise TypeError(version)
 
@@ -291,6 +294,9 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
     if version is None:
         version = build_cfg['version']
 
+    if version is not None:
+        version = Version(version).full()
+
     if output is None:
         output = './bin/'
 
@@ -364,6 +370,9 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
     if version is None:
         version = build_cfg['version']
 
+    if version is not None:
+        version = Version(version).full()
+
     if binary_path is None:
         binary_path = './bin/'
 
@@ -435,6 +444,9 @@ def generate_metadata(build_cfg, version=None, build_date=None):
 
     if version is None:
         version = build_cfg['version']
+
+    if version is not None:
+        version = Version(version).full()
 
     if build_date is None:
         build_date = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
@@ -558,6 +570,10 @@ def update_plugin_manifest(old, new):
 
     while old_versions:
         ver = old_versions.pop(0)
+
+        # Upgrade old incomplete version numbers - Jellyfin is not a fan of those.
+        ver['version'] = Version(ver['version']).full()
+
         if ver['version'] not in new_version_numbers:
             old['versions'].append(ver)
 
