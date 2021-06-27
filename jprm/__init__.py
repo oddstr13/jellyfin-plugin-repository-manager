@@ -815,6 +815,7 @@ def cli_repo_add(repo_path, plugins, url):
         name = plugin_manifest['name']
         slug = slugify(name)
         version = plugin_manifest['versions'][0]['version']
+        guid = plugin_manifest['guid']
 
         logger.info("Adding {plugin} version {version} to {repo}".format(
             plugin=name,
@@ -865,7 +866,7 @@ def cli_repo_add(repo_path, plugins, url):
 
         updated = False
         for p_manifest in repo_manifest:
-            if p_manifest.get('name') == name:
+            if p_manifest.get('guid') == guid:
                 update_plugin_manifest(p_manifest, plugin_manifest)
                 updated = True
 
