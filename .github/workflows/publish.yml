@@ -54,7 +54,7 @@ jobs:
           asset_path: 'dist/*'
           overwrite: true
 
-      - name: Upload GitHub Release Artifacts
+      - name: Upload GitHub Release Artifacts (Manual trigger)
         uses: shogo82148/actions-upload-release-asset@v1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
