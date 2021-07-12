@@ -1,0 +1,39 @@
+name: Test Composite Action
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: Checkout Jellyfin Template Plugin
+        uses: actions/checkout@v2
+        with:
+          repository: 'jellyfin/jellyfin-plugin-template'
+          path: 'plugin-template'
+
+      - name: Build Template Plugin with Action
+        uses: ./
+        id: jprm
+        with:
+          verbosity: 'debug'
+          path: 'plugin-template'
+          output: 'plugin-template/artifacts'
+
+      - name: List Output Artifact
+        run: 'ls -la ${{ steps.jprm.outputs.artifact }}'
