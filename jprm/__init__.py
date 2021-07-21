@@ -314,6 +314,8 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
         'version': version,
     }
 
+    logger.debug(params)
+
     projects = []
 
     sln_file = None
@@ -348,9 +350,9 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
         logger.error(stderr)
         exit(1)
 
-    build_command = "dotnet publish --nologo" \
+    build_command = "dotnet publish --nologo --no-restore" \
         " --configuration={dotnet_config} --framework={dotnet_framework}" \
-        " --output={output} /p:Version={version}"
+        " --output={output} -p:Version={version}"
 
     stdout, stderr, retcode = run_os_command(build_command.format(**params), cwd=path)
     if retcode:
