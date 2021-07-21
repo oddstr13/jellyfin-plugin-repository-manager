@@ -29,7 +29,7 @@ inputs:
     description: 'The dotnet target framework used for the plugin build (default: net5.0)'
   verbosity:
     required: false
-    default: 'info'
+    default: 'debug'
     description: 'The log verbosity of JPRM'
 
 outputs:
