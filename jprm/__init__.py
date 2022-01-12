@@ -834,6 +834,11 @@ def cli_repo_add(repo_path, plugins, url):
 
         if not os.path.exists(plugin_dir):
             os.makedirs(plugin_dir)
+
+        logger.info("Copying {plugin_file} to {plugin_target}".format(
+            plugin_file=plugin_file,
+            plugin_target=plugin_target,
+        ))
         shutil.copyfile(plugin_file, plugin_target)
 
         if "image" in plugin_manifest:
