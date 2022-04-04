@@ -1,5 +1,5 @@
 
-Click ~= 8.0, != 8.0.0
+Click ~= 8.1
 click-log ~= 0.3.2
 PyYAML ~= 5.4
 python-slugify ~= 5.0
