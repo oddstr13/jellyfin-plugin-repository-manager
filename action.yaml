@@ -58,8 +58,8 @@ runs:
       run: |-
         echo "::group::Building and Packaging"
 
-        if [[ -n "${{ inputs.verion }}" ]]; then
-          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.verion }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+        if [[ -n "${{ inputs.version }}" ]]; then
+          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.version }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
         else
           artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
         fi
