@@ -19,7 +19,7 @@ jobs:
       - name: Setup .Net
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: '6.0.x'
 
       - name: Checkout Jellyfin Template Plugin
         uses: actions/checkout@v2
