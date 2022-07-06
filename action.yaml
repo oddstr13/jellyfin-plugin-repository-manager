@@ -58,7 +58,7 @@ runs:
       run: |-
         echo "::group::Building and Packaging"
         
-        if [[ -n "${{ inputs.dotnet-target }}"; then
+        if [[ -n "${{ inputs.dotnet-target }}" ]]; then
           DOTNET_FRAMEWORK="--dotnet-framework ${{ inputs.dotnet-target }}"
         else
           DOTNET_FRAMEWORD=""
