@@ -25,8 +25,8 @@ inputs:
     description: 'The dotnet build configuration (default: Release)'
   dotnet-target:
     required: false
-    default: 'net5.0'
-    description: 'The dotnet target framework used for the plugin build (default: net5.0)'
+    default: ''
+    description: 'Overwrite the detected dotnet target framework used for the plugin build (default: "")'
   verbosity:
     required: false
     default: 'debug'
@@ -57,12 +57,21 @@ runs:
       shell: bash
       run: |-
         echo "::group::Building and Packaging"
-
-        if [[ -n "${{ inputs.version }}" ]]; then
-          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} -v ${{ inputs.version }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+        
+        if [[ -n "${{ inputs.dotnet-target }}" ]]; then
+          DOTNET_FRAMEWORK="--dotnet-framework ${{ inputs.dotnet-target }}"
         else
-          artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} --dotnet-configuration ${{ inputs.dotnet-config }} --dotnet-framework ${{ inputs.dotnet-target }})"
+          DOTNET_FRAMEWORD=""
         fi
+        
+        if [[ -n "${{ inputs.version }}" ]]; then
+          PLUGIN_VERSION="-v ${{ inputs.version }}"
+        else
+          PLUGIN_VERSION=""
+        fi
+        
+        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} ${DOTNET_FRAMEWORK})"
+        
         echo "Artifact: ${artifact}"
         echo "::set-output name=artifact::${artifact}"
         echo "::endgroup::"
