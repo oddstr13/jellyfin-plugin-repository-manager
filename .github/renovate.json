@@ -1,0 +1,18 @@
+{
+    "extends": [
+        "config:base",
+        ":dependencyDashboard",
+        ":timezone(Etc/UTC)",
+        ":preserveSemverRanges"
+    ],
+    "addLabels": ["dependencies"],
+    "internalChecksFilter": "strict",
+    "rebaseWhen": "conflicted",
+    "packageRules": [
+        {
+            "description": "Add the ci and github-actions GitHub label to GitHub Action bump PRs",
+            "matchManagers": ["github-actions"],
+            "addLabels": ["ci"]
+        }
+    ]
+}
