@@ -1,6 +1,6 @@
 
 Click ~= 8.0, != 8.0.0
 click-log ~= 0.3.2
-PyYAML ~= 5.4
+PyYAML ~=6.0
 python-slugify ~= 5.0
 tabulate ~= 0.8.9
