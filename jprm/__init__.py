@@ -99,6 +99,7 @@ def get_config(path):
             build_cfg = load_manifest(config_path)
             if build_cfg is not None:
                 return build_cfg
+    return None
 
 
 def run_os_command(command, environment=None, shell=False, cwd=None):
