@@ -33,7 +33,15 @@ __version__ = "0.4.2"
 JSON_METADATA_FILE = "meta.json"
 DEFAULT_IMAGE_FILE = "image.png"
 DEFAULT_FRAMEWORK = "netstandard2.1"
-
+CONFIG_LOCATIONS = [
+    "jprm.yaml",
+    ".jprm.yaml",
+    ".ci/jprm.yaml",
+    ".github/jprm.yaml",
+    ".gitlab/jprm.yaml",
+    "meta.yaml",
+    "build.yaml",
+]
 
 ####################
 
@@ -82,6 +90,15 @@ def load_manifest(manifest_file_name):
             logger.error("Failed to load YAML manifest {}: {}".format(manifest_file_name, e))
             return None
     return cfg
+
+
+def get_config(path):
+    for config_file in CONFIG_LOCATIONS:
+        config_path = os.path.join(path, config_file)
+        if os.path.exists(config_path):
+            build_cfg = load_manifest(config_path)
+            if build_cfg is not None:
+                return build_cfg
 
 
 def run_os_command(command, environment=None, shell=False, cwd=None):
@@ -287,7 +304,7 @@ class Version(object):
 
 def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None):
     if build_cfg is None:
-        build_cfg = load_manifest(os.path.join(path, "build.yaml"))
+        build_cfg = get_config(path)
 
         if build_cfg is None:
             return None
@@ -365,7 +382,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
 def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=None, bundle=False):
     if build_cfg is None:
-        build_cfg = load_manifest(os.path.join(path, "build.yaml"))
+        build_cfg = get_config(path)
 
         if build_cfg is None:
             return None
