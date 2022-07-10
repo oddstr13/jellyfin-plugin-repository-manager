@@ -27,6 +27,7 @@ categories:
     labels:
       - dependencies # Default label used by Dependabot
   - title: ":construction_worker: CI & build changes"
+    collapse-after: 5
     labels:
       - ci
       - build
