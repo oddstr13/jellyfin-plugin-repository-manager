@@ -1,0 +1,15 @@
+{
+    "name": "Plugin A",
+    "guid": "f5ddc434-4b42-45d0-a049-8dda7f1ed30b",
+    "version": "1.0.0.0",
+    "targetAbi": "10.8.0.0",
+    "framework": "net6.0",
+    "owner": "Oddstr13",
+    "overview": "Test plugin A",
+    "description": "Test plugin A",
+    "category": "Other",
+    "artifacts": [
+        "dummy.dll"
+    ],
+    "changelog": "Initial Release\n"
+}

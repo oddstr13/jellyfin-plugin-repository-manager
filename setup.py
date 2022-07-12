@@ -26,7 +26,7 @@ setup(
     url='https://github.com/oddstr13/jellyfin-plugin-repository-manager',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     install_requires=requirements,
     entry_points={
         'console_scripts': [
