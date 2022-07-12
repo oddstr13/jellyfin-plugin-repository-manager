@@ -47,7 +47,7 @@ def test_init_repo_file(cli_runner: CliRunner, tmpdir: LocalPath):
 
 def test_double_init_repo_path(cli_runner: CliRunner, tmpdir: LocalPath):
     # Initializing an existing repo is not allowed
-    result = cli_runner.invoke(
+    cli_runner.invoke(
         jprm.cli, ["--verbosity=debug", "repo", "init", str(tmpdir)]
     )
     result = cli_runner.invoke(
@@ -76,7 +76,7 @@ def test_repo_add(cli_runner: CliRunner, tmpdir: LocalPath, datafiles: LocalPath
     manifest_a2 = json.load(datafiles / "manifest_pluginA2.json")
     manifest_ab = json.load(datafiles / "manifest_pluginAB.json")
 
-    result = cli_runner.invoke(
+    cli_runner.invoke(
         jprm.cli,
         [
             "--verbosity=debug",
@@ -90,7 +90,7 @@ def test_repo_add(cli_runner: CliRunner, tmpdir: LocalPath, datafiles: LocalPath
     assert manifest == manifest_a
     assert (tmpdir / "plugin-a" / "plugin-a_1.0.0.0.zip").exists()
 
-    result = cli_runner.invoke(
+    cli_runner.invoke(
         jprm.cli,
         [
             "--verbosity=debug",
@@ -104,7 +104,7 @@ def test_repo_add(cli_runner: CliRunner, tmpdir: LocalPath, datafiles: LocalPath
     assert manifest == manifest_a2
     assert (tmpdir / "plugin-a" / "plugin-a_1.1.0.0.zip").exists()
 
-    result = cli_runner.invoke(
+    cli_runner.invoke(
         jprm.cli,
         [
             "--verbosity=debug",

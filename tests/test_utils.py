@@ -116,6 +116,6 @@ def test_version():
         jprm.Version(3.5)
 
     with pytest.raises(KeyError):
-        ver["__len__"]
+        print(ver["__len__"])
 
     assert ver.full() == "3.0.0.0"
