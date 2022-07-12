@@ -1,0 +1,20 @@
+[
+    {
+        "guid": "f5ddc434-4b42-45d0-a049-8dda7f1ed30b",
+        "name": "Plugin A",
+        "description": "Test plugin A",
+        "overview": "Test plugin A",
+        "owner": "Oddstr13",
+        "category": "Other",
+        "versions": [
+            {
+                "version": "1.0.0.0",
+                "changelog": "Initial Release\n",
+                "targetAbi": "10.8.0.0",
+                "sourceUrl": "/plugin-a/plugin-a_1.0.0.0.zip",
+                "checksum": "33d17c8b998bc4f9f0d73d89dffb20f7",
+                "timestamp": "2022-07-12T00:00:00Z"
+            }
+        ]
+    }
+]
