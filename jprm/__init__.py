@@ -110,6 +110,7 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
 
     logger.debug(['run_os_command', cmd, environment, shell, cwd])
     try:
+        command_output = None
         command_output = subprocess.run(
             cmd,
             env=environment,
@@ -120,6 +121,7 @@ def run_os_command(command, environment=None, shell=False, cwd=None):
         )
     except Exception as e:
         logger.exception(command_output, exc_info=e)
+        raise
 
     return command_output.stdout.decode('utf8'), command_output.stderr.decode('utf8'), command_output.returncode
 
@@ -451,9 +453,9 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
         md5 = checksum_file(output_path, checksum_type='md5')
 
         with open(output_path + '.md5sum', 'wb') as fh:
-            fh.write(output_file.encode())
-            fh.write(b' *')
             fh.write(md5.encode())
+            fh.write(b' *')
+            fh.write(output_file.encode())
             fh.write(b'\n')
 
         shutil.move(meta_tempfile, '{filename}.{meta}'.format(filename=output_path, meta=JSON_METADATA_FILE))
