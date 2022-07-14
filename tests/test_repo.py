@@ -47,9 +47,7 @@ def test_init_repo_file(cli_runner: CliRunner, tmpdir: LocalPath):
 
 def test_double_init_repo_path(cli_runner: CliRunner, tmpdir: LocalPath):
     # Initializing an existing repo is not allowed
-    cli_runner.invoke(
-        jprm.cli, ["--verbosity=debug", "repo", "init", str(tmpdir)]
-    )
+    cli_runner.invoke(jprm.cli, ["--verbosity=debug", "repo", "init", str(tmpdir)])
     result = cli_runner.invoke(
         jprm.cli, ["--verbosity=debug", "repo", "init", str(tmpdir)]
     )
