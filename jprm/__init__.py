@@ -255,7 +255,7 @@ class Version(object):
 
     def get(self, key, default=None):
         if key not in self:
-            logger.warn('Accessing non-existant key `{}` of `{!r}`'.format(key, self))
+            logger.warning('Accessing non-existant key `{}` of `{!r}`'.format(key, self))
             return default
 
         return self[key]
