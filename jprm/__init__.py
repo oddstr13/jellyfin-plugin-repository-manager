@@ -11,6 +11,7 @@ import os
 import json
 import hashlib
 import datetime
+from typing import Optional, Union
 import zipfile
 import subprocess
 import tempfile
@@ -254,7 +255,7 @@ class Version(object):
 
     def get(self, key, default=None):
         if key not in self:
-            logger.warn('Accessing non-existant key `{}` of `{!r}`'.format(key, self))
+            logger.warning('Accessing non-existant key `{}` of `{!r}`'.format(key, self))
             return default
 
         return self[key]
@@ -611,6 +612,25 @@ def update_plugin_manifest(old, new):
 
     old['versions'].sort(key=lambda l: Version(l['version']), reverse=True)
     return old
+
+
+def get_plugin_from_manifest(repo_manifest: dict, plugin: Union[str, uuid.UUID]) -> Optional[dict]:
+    if plugin is None:
+        return None
+
+    if isinstance(plugin, uuid.UUID):
+        plugin = str(plugin)
+    else:
+        try:
+            plugin = str(uuid.UUID(plugin))
+        except ValueError:
+            pass
+
+    items = [item for item in repo_manifest if plugin in [item.get('name'), item.get('guid'), slugify(item.get('name'))]]
+    if items:
+        return items[0]
+
+    return None
 
 
 _project_version_re = re.compile(r'\<Version\>(?P<version>.*?)\</Version\>')
@@ -984,6 +1004,53 @@ def cli_repo_list(repo_path, plugin):
 
         if table:
             click.echo(tabulate.tabulate(table, headers=('NAME', 'VERSION', 'SLUG', 'GUID'), tablefmt='plain', colalign=('left', 'right', 'left')))
+
+
+@cli_repo.command('remove')
+@click.argument('repo_path',
+    nargs=1,
+    required=True,
+    type=RepoPathParam(should_exist=True),
+)
+@click.argument('plugin',
+    nargs=1,
+    required=True,
+    default=None,
+)
+@click.argument('version',
+    nargs=1,
+    required=False,
+    default=None,
+    type=Version,
+)
+def cli_repo_remove(repo_path, plugin, version: Optional[Version]):
+    with open(repo_path, 'r') as fh:
+        logger.debug('Reading repo manifest from {}'.format(repo_path))
+        repo_manifest = json.load(fh)
+
+    plugin_manifest = get_plugin_from_manifest(repo_manifest, plugin)
+    if plugin_manifest is None:
+        raise click.UsageError('PLUGIN `{}` not found in `{}`'.format(plugin, repo_path))
+
+    if version is None:
+        logger.warning(f"Removing plugin {plugin_manifest.get('name')})")
+        repo_manifest.remove(plugin_manifest)
+        click.echo(f"removed {plugin_manifest.get('guid')}")
+    else:
+        version_str = version.full()
+        for release in list(plugin_manifest.get('versions', [])):
+            if release.get('version') == version_str:
+                logger.warning(f"Removing version {version} of plugin {plugin_manifest.get('name')})")
+                plugin_manifest['versions'].remove(release)
+                click.echo(f"removed {plugin_manifest.get('guid')} {version_str}")
+
+    tmpfile = repo_path + '.tmp'
+    with open(tmpfile, 'w') as fh:
+        logging.debug('Writing repo manifest to {}'.format(tmpfile))
+        json.dump(repo_manifest, fh, indent=4)
+    logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
+    os.rename(tmpfile, repo_path)
+    click.echo("foobar")
 
 
 ####################
