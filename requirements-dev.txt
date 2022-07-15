@@ -2,7 +2,7 @@ pytest >= 5.4
 pytest-click==1.1.0
 pytest-datafiles==2.0.1
 coverage >= 5.2
-flake8==3.8.4
+flake8==4.0.1
 flake8-import-order==0.18.1
 testfixtures==7.0.0
 
