@@ -14,5 +14,8 @@
             "matchManagers": ["github-actions"],
             "labels": ["ci-dependencies"]
         }
-    ]
+    ],
+    "pip_requirements": {
+        "fileMatch": ["requirements(-[a-z]+)?\\.txt$"]
+    }
 }
