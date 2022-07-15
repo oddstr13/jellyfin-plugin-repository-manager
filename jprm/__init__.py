@@ -982,7 +982,7 @@ def cli_repo_list(repo_path, plugin):
             for version in item.get('versions', []):
                 click.echo(version.get('version'))
         else:
-            click.UsageError('PLUGIN `{}` not found in `{}`'.format(plugin, repo_path))
+            raise click.UsageError('PLUGIN `{}` not found in `{}`'.format(plugin, repo_path))
 
     else:
         table = []
