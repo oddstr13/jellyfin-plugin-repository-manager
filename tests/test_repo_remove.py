@@ -78,7 +78,8 @@ def test_repo_remove(
         version = jprm.Version(args[1]).full()
         assert f"removed {guid} {version}" in result.stdout.splitlines(False)
 
-    compare(
-        expected=json.load(open(datafiles / output)),
-        actual=json.load(open(manifest_file)),
-    )
+    with open(datafiles / output) as expected_fh, open(manifest_file) as actual_fh:
+        compare(
+            expected=json.load(expected_fh),
+            actual=json.load(actual_fh),
+        )
