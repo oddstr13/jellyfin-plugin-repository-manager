@@ -9,13 +9,13 @@ pip install --user jprm
 From GitHub
 -----------
 ```
-pip install --user git+https://github.com/oddstr13/jellyfin-plugin-metadata-manager
+pip install --user git+https://github.com/oddstr13/jellyfin-plugin-repository-manager
 ```
 
 From local developement directory
 ---------------------------------
 ```
-git clone https://github.com/oddstr13/jellyfin-plugin-metadata-manager.git
+git clone https://github.com/oddstr13/jellyfin-plugin-repository-manager.git
 pip install --user --editable jellyfin-plugin-metadata-manager
 ```
 
