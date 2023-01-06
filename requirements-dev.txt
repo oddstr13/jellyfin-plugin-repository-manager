@@ -4,7 +4,7 @@ pytest-datafiles==2.0.1
 coverage >= 5.2
 flake8==4.0.1
 flake8-import-order==0.18.1
-testfixtures==7.0.0
+testfixtures==7.0.4
 
 types-tabulate==0.8.11
 types-python-slugify==6.1.0
