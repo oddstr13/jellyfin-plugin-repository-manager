@@ -73,5 +73,5 @@ runs:
         artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} ${DOTNET_FRAMEWORK})"
         
         echo "Artifact: ${artifact}"
-        echo "::set-output name=artifact::${artifact}"
+        echo "artifact=${artifact}" >> $GITHUB_OUTPUT
         echo "::endgroup::"
