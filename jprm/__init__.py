@@ -373,7 +373,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     build_command = "dotnet publish --nologo --no-restore" \
         " --configuration={dotnet_config} --framework={dotnet_framework}" \
-        " --property:PublishDir={output} -p:Version={version}"
+        " -p:PublishDir={output} -p:Version={version}"
 
     stdout, stderr, retcode = run_os_command(build_command.format(**params), cwd=path)
     if retcode:
