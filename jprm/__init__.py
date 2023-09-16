@@ -306,7 +306,8 @@ class Version(object):
 ####################
 
 
-def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None):
+def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None,
+                 publish_extra_args=''):
     if build_cfg is None:
         build_cfg = get_config(path)
 
@@ -332,6 +333,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
         'dotnet_config': dotnet_config,
         'dotnet_framework': dotnet_framework,
         'output': output,
+        'publish_extra_args': publish_extra_args,
         'version': version,
     }
 
@@ -373,7 +375,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     build_command = "dotnet publish --nologo --no-restore" \
         " --configuration={dotnet_config} --framework={dotnet_framework}" \
-        " -p:PublishDir={output} -p:Version={version}"
+        " -p:PublishDir={output} -p:Version={version} {publish_extra_args}"
 
     stdout, stderr, retcode = run_os_command(build_command.format(**params), cwd=path)
     if retcode:
@@ -806,9 +808,15 @@ def cli_plugin():
     default=None,
     help='Dotnet framework ({})'.format(DEFAULT_FRAMEWORK),
 )
-def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, version):
+@click.option('--publish-extra-args',
+    default='',
+    required=False,
+    help='Extra arguments to pass to dotnet publish',
+)
+def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, publish_extra_args, version):
     with tempfile.TemporaryDirectory() as bintemp:
-        build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework, version=version)
+        build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework,
+                     version=version, publish_extra_args=publish_extra_args)
         filename = package_plugin(path, version=version, binary_path=bintemp, output=output)
         click.echo(filename)
 

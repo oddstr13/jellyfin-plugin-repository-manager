@@ -27,6 +27,10 @@ inputs:
     required: false
     default: ''
     description: 'Overwrite the detected dotnet target framework used for the plugin build (default: "")'
+  publish-extra-args:
+    required: false
+    default: '/maxcpucount:1'
+    description: 'Extra arguments to pass to dotnet publish (default: "")'
   verbosity:
     required: false
     default: 'debug'
@@ -70,7 +74,13 @@ runs:
           PLUGIN_VERSION=""
         fi
         
-        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} ${DOTNET_FRAMEWORK})"
+        if [[ -n "${{ inputs.publish-extra-args }}" ]]; then
+          PUBLISH_EXTRA_ARGS="--publish-extra-args ${{ inputs.publish-extra-args }}"
+        else
+          PUBLISH_EXTRA_ARGS=""
+        fi
+        
+        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} ${PUBLISH_EXTRA_ARGS} ${DOTNET_FRAMEWORK})"
         
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
