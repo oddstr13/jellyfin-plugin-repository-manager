@@ -27,6 +27,10 @@ inputs:
     required: false
     default: ''
     description: 'Overwrite the detected dotnet target framework used for the plugin build (default: "")'
+  max-cpu-count:
+    required: false
+    default: '1'
+    description: 'Maximum number of processors to use during build (default: "1")'
   verbosity:
     required: false
     default: 'debug'
@@ -70,7 +74,7 @@ runs:
           PLUGIN_VERSION=""
         fi
         
-        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} ${DOTNET_FRAMEWORK})"
+        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} --max-cpu-count ${{ inputs.max-cpu-count }} ${DOTNET_FRAMEWORK})"
         
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
