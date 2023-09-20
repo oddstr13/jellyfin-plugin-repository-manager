@@ -306,7 +306,7 @@ class Version(object):
 ####################
 
 
-def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None):
+def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None, max_cpu_count=None):
     if build_cfg is None:
         build_cfg = get_config(path)
 
@@ -322,6 +322,9 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
     if output is None:
         output = './bin/'
 
+    if max_cpu_count is None:
+        max_cpu_count = 1
+
     if dotnet_framework is None:
         if 'framework' not in build_cfg:
             logger.warning("`framework` is not specified in build manifest, defaulting to `{}`.".format(DEFAULT_FRAMEWORK))
@@ -332,6 +335,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
         'dotnet_config': dotnet_config,
         'dotnet_framework': dotnet_framework,
         'output': output,
+        'max_cpu_count': max_cpu_count,
         'version': version,
     }
 
@@ -373,7 +377,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     build_command = "dotnet publish --nologo --no-restore" \
         " --configuration={dotnet_config} --framework={dotnet_framework}" \
-        " -p:PublishDir={output} -p:Version={version}"
+        " -p:PublishDir={output} -p:Version={version} -maxcpucount:{max_cpu_count}"
 
     stdout, stderr, retcode = run_os_command(build_command.format(**params), cwd=path)
     if retcode:
@@ -806,9 +810,15 @@ def cli_plugin():
     default=None,
     help='Dotnet framework ({})'.format(DEFAULT_FRAMEWORK),
 )
-def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, version):
+@click.option('--max-cpu-count',
+    default=1,
+    type=int,
+    help='Max number of cores to use during build (1)',
+)
+def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, max_cpu_count, version):
     with tempfile.TemporaryDirectory() as bintemp:
-        build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework, version=version)
+        build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework,
+                     version=version, max_cpu_count=max_cpu_count)
         filename = package_plugin(path, version=version, binary_path=bintemp, output=output)
         click.echo(filename)
 
