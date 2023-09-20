@@ -306,8 +306,7 @@ class Version(object):
 ####################
 
 
-def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None,
-                 max_cpu_count='1'):
+def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config='Release', dotnet_framework=None, max_cpu_count=None):
     if build_cfg is None:
         build_cfg = get_config(path)
 
@@ -322,6 +321,9 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     if output is None:
         output = './bin/'
+
+    if max_cpu_count is None:
+        max_cpu_count = 1
 
     if dotnet_framework is None:
         if 'framework' not in build_cfg:
@@ -375,7 +377,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
 
     build_command = "dotnet publish --nologo --no-restore" \
         " --configuration={dotnet_config} --framework={dotnet_framework}" \
-        f" -p:PublishDir={output} -p:Version={version} /maxcpucount:{max_cpu_count}"
+        " -p:PublishDir={output} -p:Version={version} -maxcpucount:{max_cpu_count}"
 
     stdout, stderr, retcode = run_os_command(build_command.format(**params), cwd=path)
     if retcode:
@@ -809,9 +811,9 @@ def cli_plugin():
     help='Dotnet framework ({})'.format(DEFAULT_FRAMEWORK),
 )
 @click.option('--max-cpu-count',
-    default='1',
-    required=False,
-    help='Maximum number of processors to use during build',
+    default=1,
+    type=int,
+    help='Max number of cores to use during build (1)',
 )
 def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, max_cpu_count, version):
     with tempfile.TemporaryDirectory() as bintemp:
