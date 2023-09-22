@@ -13,6 +13,9 @@ on:
 jobs:
   build-publish:
     runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,6 +34,7 @@ jobs:
       - name: Build package
         run: |
           python setup.py sdist bdist_wheel
+          twine check
 
       - uses: actions/upload-artifact@v3
         with:
@@ -40,11 +44,7 @@ jobs:
           path: dist
 
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@v1.8.10
 
       - name: Upload GitHub Release Artifacts
         uses: shogo82148/actions-upload-release-asset@v1
