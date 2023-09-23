@@ -21,7 +21,6 @@ jobs:
         with:
           config-name: release-drafter.yaml
           publish: yes
-          latest: yes
 
       - name: Delete branch
         run: git push origin --delete 'release/next'
