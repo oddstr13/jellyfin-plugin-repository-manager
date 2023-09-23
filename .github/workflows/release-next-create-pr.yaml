@@ -79,5 +79,3 @@ jobs:
             ---
 
             ${{ needs.draft.outputs.body }}
-
-      # TODO: Delete branch when merged

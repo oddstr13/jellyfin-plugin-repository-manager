@@ -1,0 +1,25 @@
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'master'
+
+jobs:
+  if_merged:
+    if: github.head_ref == 'release/next' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        uses: release-drafter/release-drafter@v5.24.0
+        id: draft
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          publish: yes
+          latest: yes
+
+      - name: Delete branch
+        run: git push origin --delete 'release/next'
