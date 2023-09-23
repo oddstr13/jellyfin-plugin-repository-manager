@@ -39,5 +39,8 @@ jobs:
     needs: detect
     if: ${{ contains(needs.detect.outputs.checked, needs.detect.outputs.refresh_checkbox) }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Call prepp PR workflow
         uses: ./.github/workflows/release-next-create-pr.yaml
