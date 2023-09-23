@@ -22,5 +22,8 @@ jobs:
           config-name: release-drafter.yaml
           publish: yes
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Delete branch
         run: git push origin --delete 'release/next'
