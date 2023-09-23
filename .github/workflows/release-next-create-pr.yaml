@@ -34,6 +34,8 @@ jobs:
         id: draft
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        with:
+          config-name: release-drafter.yaml
   crud:
     name: "Create Release PR"
     needs:
