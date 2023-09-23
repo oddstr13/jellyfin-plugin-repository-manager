@@ -34,7 +34,7 @@ jobs:
       - name: Build package
         run: |
           python setup.py sdist bdist_wheel
-          twine check
+          twine check dist/*
 
       - uses: actions/upload-artifact@v3
         with:
