@@ -10,7 +10,7 @@ jobs:
     outputs:
       checked: ${{ steps.detect.outputs.checked }}
       unchecked: ${{ steps.detect.outputs.unchecked }}
-      dotenv: ${{ steps.dotenv.outputs }}
+      refresh_checkbox: ${{ steps.dotenv.outputs.refresh_checkbox }}
     steps:
       - name: Checkbox Trigger
         id: detect
@@ -36,6 +36,6 @@ jobs:
   update:
     runs-on: ubuntu-latest
     needs: detect
-    if: ${{ contains(needs.detect.outputs.checked, needs.detect.outputs.dotenv.refresh_checkbox) }}
+    if: ${{ contains(needs.detect.outputs.checked, needs.detect.outputs.refresh_checkbox) }}
     steps:
       - uses: ./.github/workflows/release-next-create-pr.yaml

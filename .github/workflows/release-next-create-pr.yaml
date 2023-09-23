@@ -9,7 +9,7 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      dotenv: ${{ steps.dotenv.outputs }}
+      refresh_checkbox: ${{ steps.dotenv.outputs.refresh_checkbox }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
           pr_body: |
             :robot: This is a generated PR to bump the `release.yaml` version and update the changelog.
 
-            - [ ] ${{ needs.detect.outputs.dotenv.refresh_checkbox }}
+            - [ ] ${{ needs.detect.outputs.refresh_checkbox }}
               Check this box if you have updated tags and titles.
 
             ---
