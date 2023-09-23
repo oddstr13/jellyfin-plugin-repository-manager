@@ -23,7 +23,7 @@ jobs:
       - name: List changes
         run: |
           echo "checked=${{ steps.detect.outputs.checked }}"
-          echo "unchecked=${{ steps.detect.outputs.unchecked }}
+          echo "unchecked=${{ steps.detect.outputs.unchecked }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
