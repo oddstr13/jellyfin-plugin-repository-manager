@@ -1,3 +1,4 @@
+name: Update release prepp PR (manual)
 on:
   pull_request:
     types:
@@ -19,7 +20,7 @@ jobs:
           github-token: ${{ github.token }}
           action: detect
 
-      - name: list changes
+      - name: List changes
         run: |
           echo "checked=${{ steps.detect.outputs.checked }}"
           echo "unchecked=${{ steps.detect.outputs.unchecked }}
@@ -38,4 +39,5 @@ jobs:
     needs: detect
     if: ${{ contains(needs.detect.outputs.checked, needs.detect.outputs.refresh_checkbox) }}
     steps:
-      - uses: ./.github/workflows/release-next-create-pr.yaml
+      - name: Call prepp PR workflow
+        uses: ./.github/workflows/release-next-create-pr.yaml
