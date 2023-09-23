@@ -18,10 +18,15 @@ jobs:
         with:
           github-token: ${{ github.token }}
           action: detect
+
       - name: list changes
         run: |
           echo "checked=${{ steps.detect.outputs.checked }}"
           echo "unchecked=${{ steps.detect.outputs.unchecked }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Dotenv Action
         id: dotenv
         uses: falti/dotenv-action@v1.0.4
