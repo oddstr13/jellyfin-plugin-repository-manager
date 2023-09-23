@@ -1,0 +1,83 @@
+on:
+  push:
+    branches:
+      - master
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      dotenv: ${{ steps.dotenv.outputs }}
+    steps:
+      - name: Dotenv Action
+        id: dotenv
+        uses: falti/dotenv-action@v1.0.4
+        with:
+          path: ./.github/release-next.env
+
+  draft:
+    needs: detect
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag_name: ${{ steps.draft.outputs.tag_name }}
+      body: ${{ steps.draft.outputs.body }}
+    steps:
+      - name: Update Draft
+        uses: release-drafter/release-drafter@v5.24.0
+        id: draft
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+  crud:
+    name: "Create Release PR"
+    needs:
+      - detect
+      - draft
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Update version
+        run: |
+          TAG="${{ needs.draft.outputs.tag_name }}"
+          NEXT_VERSION=${TAG#v}"
+
+          sed -i -e 's/^__version__ *=.*$/__version__ = "'"${NEXT_VERSION}"'"/'  jprm/__init__.py
+          git add jprm/__init__.py
+
+          echo "NEXT_VERSION=${NEXT_VERSION}" >> $GITHUB_ENV
+
+      - name: Commit changes
+        run: |
+          git config user.name "jellyfin-bot"
+          git config user.email "team@jellyfin.org"
+
+          git checkout -b release/next
+          git commit -m "Bump version to ${{ env.NEXT_VERSION }}"
+
+          git push -f origin release/next
+
+      - name: Create or update PR
+        uses: k3rnels-actions/pr-update@v2.1.0
+        with:
+          token: ${{ github.token }}
+          pr_title: Prepare for release ${{ needs.draft.outputs.tag_name }}
+          pr_source: release/next
+          pr_labels: 'release-prep,skip-changelog'
+          pr_body: |
+            :robot: This is a generated PR to bump the `release.yaml` version and update the changelog.
+
+            - [ ] ${{ needs.detect.outputs.dotenv.refresh_checkbox }}
+              Check this box if you have updated tags and titles.
+
+            ---
+
+            ${{ needs.draft.outputs.body }}
+
+      # TODO: Delete branch when merged
