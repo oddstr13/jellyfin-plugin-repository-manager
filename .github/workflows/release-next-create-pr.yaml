@@ -48,7 +48,7 @@ jobs:
       - name: Update version
         run: |
           TAG="${{ needs.draft.outputs.tag_name }}"
-          NEXT_VERSION=${TAG#v}"
+          NEXT_VERSION="${TAG#v}"
 
           sed -i -e 's/^__version__ *=.*$/__version__ = "'"${NEXT_VERSION}"'"/'  jprm/__init__.py
           git add jprm/__init__.py
