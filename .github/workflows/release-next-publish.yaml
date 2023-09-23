@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      upload_url: ${{ steps.draft.outputs.upload_url }}
     steps:
       - name: Publish release
         uses: release-drafter/release-drafter@v5.24.0
@@ -25,10 +27,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Delete branch
+        continue-on-error: true
+        run: git push origin --delete 'release/next'
+
+  do_publish:
+    needs: if_merged
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Call release workflow
         uses: ./.github/workflows/publish.yaml
         with:
-          upload_url: ${{ steps.draft.outputs.upload_url }}
-
-      - name: Delete branch
-        run: git push origin --delete 'release/next'
+          upload_url: ${{ needs.if_merged.outputs.upload_url }}
