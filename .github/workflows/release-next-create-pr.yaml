@@ -7,6 +7,7 @@ on:
 
 jobs:
   detect:
+    name: "Load env variables"
     runs-on: ubuntu-latest
     outputs:
       refresh_checkbox: ${{ steps.dotenv.outputs.refresh_checkbox }}
@@ -21,6 +22,7 @@ jobs:
           path: ./.github/release-next.env
 
   draft:
+    name: "Update draft (and grab variables)"
     needs: detect
     runs-on: ubuntu-latest
     permissions:
@@ -45,6 +47,9 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Update version
         run: |
           TAG="${{ needs.draft.outputs.tag_name }}"
