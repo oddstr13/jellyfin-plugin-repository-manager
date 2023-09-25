@@ -32,19 +32,8 @@ jobs:
         run: git push origin --delete 'release/next'
 
   do_publish:
+    name: Call release workflow
     needs: if_merged
-    runs-on: ubuntu-latest
-    environment: release
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Debug
-        run: |
-          pwd
-          find ./.github -ls
-
-      - name: Call release workflow
-        uses: ./.github/workflows/publish.yaml
-        with:
-          upload_url: ${{ needs.if_merged.outputs.upload_url }}
+    uses: ./.github/workflows/publish.yaml
+    with:
+      upload_url: ${{ needs.if_merged.outputs.upload_url }}
