@@ -39,6 +39,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug
+        run: |
+          find ./.github -ls
+
       - name: Call release workflow
         uses: ./.github/workflows/publish.yaml
         with:
