@@ -1,5 +1,6 @@
 name-template: 'Version $RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
+commitish: refs/heads/master
 categories:
   - title: ":boom: Breaking changes"
     labels:
