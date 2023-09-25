@@ -41,6 +41,7 @@ jobs:
 
       - name: Debug
         run: |
+          pwd
           find ./.github -ls
 
       - name: Call release workflow
