@@ -1,18 +1,16 @@
-import os
-import json
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
-from py._path.local import LocalPath
 from testfixtures import compare, LogCapture
 import jprm
 
-from .test_repo import TEST_DATA_DIR
+from .test_utils import TEST_DATA_DIR, json_load
 
 
 @pytest.mark.datafiles(
-    os.path.join(TEST_DATA_DIR, "pluginA_1.0.0.zip"),
-    os.path.join(TEST_DATA_DIR, "manifest_pluginA.json"),
+    TEST_DATA_DIR / "pluginA_1.0.0.zip",
+    TEST_DATA_DIR / "manifest_pluginA.json",
 )
 @pytest.mark.parametrize(
     "url",
@@ -27,16 +25,16 @@ from .test_repo import TEST_DATA_DIR
 def test_repo_add(
     url: str,
     cli_runner: CliRunner,
-    tmpdir: LocalPath,
-    datafiles: LocalPath,
+    tmp_path: Path,
+    datafiles: Path,
 ):
-    manifest_file = tmpdir / "repo.json"
+    manifest_file = tmp_path / "repo.json"
     result = cli_runner.invoke(
         jprm.cli, ["--verbosity=debug", "repo", "init", str(manifest_file)]
     )
     assert result.exit_code == 0
 
-    manifest_a = json.load(datafiles / "manifest_pluginA.json")
+    manifest_a = json_load(datafiles / "manifest_pluginA.json")
     manifest_a[0]["versions"][0]["sourceUrl"] = url
 
     with LogCapture("jprm") as capture:
@@ -52,7 +50,7 @@ def test_repo_add(
                 url,
             ],
         )
-        manifest = json.load(manifest_file)
+        manifest = json_load(manifest_file)
         compare(manifest, manifest_a)
 
         capture.check_present(
@@ -63,4 +61,4 @@ def test_repo_add(
             ),
         )
 
-    assert not (tmpdir / "plugin-a" / "plugin-a_1.0.0.0.zip").exists()
+    assert not (tmp_path / "plugin-a" / "plugin-a_1.0.0.0.zip").exists()

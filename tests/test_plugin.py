@@ -1,37 +1,34 @@
-import os
+from pathlib import Path
+import shutil
 
 import pytest
-from click.testing import CliRunner
-from py._path.local import LocalPath
 import jprm
 
-
-TEST_DATA_DIR = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    "data",
-)
+from .test_utils import TEST_DATA_DIR
 
 
 @pytest.mark.datafiles(
-    os.path.join(TEST_DATA_DIR, "jprm.yaml"),
+    TEST_DATA_DIR / "jprm.yaml",
 )
-def test_package_plugin(cli_runner: CliRunner, tmpdir_factory, datafiles: LocalPath):
-    bindir: LocalPath = tmpdir_factory.mktemp("bin")
-    plugin: LocalPath = tmpdir_factory.mktemp("plugin")
-    artifacts: LocalPath = tmpdir_factory.mktemp("artifacts")
+def test_package_plugin(tmp_path_factory, datafiles: Path):
+    bindir: Path = tmp_path_factory.mktemp("bin")
+    plugin: Path = tmp_path_factory.mktemp("plugin")
+    artifacts: Path = tmp_path_factory.mktemp("artifacts")
 
-    bindir.join("dummy.dll").write_text("", "utf-8")
+    (bindir / "dummy.dll").write_text("", "utf-8")
 
-    datafiles.join("jprm.yaml").copy(plugin)
+    shutil.copy(datafiles / "jprm.yaml", plugin)
 
-    output_path = jprm.package_plugin(
-        str(plugin), version="5.0", binary_path=str(bindir), output=str(artifacts)
+    output_path = Path(
+        jprm.package_plugin(
+            str(plugin), version="5.0", binary_path=str(bindir), output=str(artifacts)
+        )
     )
 
-    assert os.path.exists(output_path)
-    assert artifacts.join("plugin-a_5.0.0.0.zip").check(file=True)
-    assert artifacts.join("plugin-a_5.0.0.0.zip.meta.json").check(file=True)
-    assert artifacts.join("plugin-a_5.0.0.0.zip.md5sum").check(file=True)
+    assert output_path.exists()
+    assert (artifacts / "plugin-a_5.0.0.0.zip").is_file()
+    assert (artifacts / "plugin-a_5.0.0.0.zip.meta.json").is_file()
+    assert (artifacts / "plugin-a_5.0.0.0.zip.md5sum").is_file()
 
     res = jprm.run_os_command(
         "md5sum -c plugin-a_5.0.0.0.zip.md5sum", cwd=str(artifacts)
