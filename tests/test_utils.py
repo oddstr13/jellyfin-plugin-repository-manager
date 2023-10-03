@@ -1,53 +1,55 @@
 import os
 import sys
 import json
+from pathlib import Path
 
 import pytest
-from py._path.local import LocalPath
 import jprm
 
 
-TEST_DATA_DIR = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    "data",
-)
+TEST_DATA_DIR = Path(os.path.dirname(os.path.realpath(__file__))) / "data"
+
+
+def json_load(path: Path, **kwargs):
+    with open(path, "rt", encoding="utf8") as handle:
+        return json.load(handle, **kwargs)
 
 
 @pytest.mark.datafiles(
-    os.path.join(TEST_DATA_DIR, "jprm.yaml"),
-    os.path.join(TEST_DATA_DIR, "jprm.json"),
+    TEST_DATA_DIR / "jprm.yaml",
+    TEST_DATA_DIR / "jprm.json",
 )
-def test_load_manifest(datafiles: LocalPath):
-    assert jprm.load_manifest(datafiles / "jprm.yaml") == json.load(
+def test_load_manifest(datafiles: Path):
+    assert jprm.load_manifest(datafiles / "jprm.yaml") == json_load(
         datafiles / "jprm.json"
     )
 
 
 @pytest.mark.datafiles(
-    os.path.join(TEST_DATA_DIR, "jprm.yaml"),
-    os.path.join(TEST_DATA_DIR, "jprm.json"),
+    TEST_DATA_DIR / "jprm.yaml",
+    TEST_DATA_DIR / "jprm.json",
 )
-def test_get_config(datafiles: LocalPath):
-    assert jprm.get_config(datafiles) == json.load(datafiles / "jprm.json")
+def test_get_config(datafiles: Path):
+    assert jprm.get_config(datafiles) == json_load(datafiles / "jprm.json")
 
 
 @pytest.mark.datafiles(
-    os.path.join(TEST_DATA_DIR, "jprm.yaml"),
-    os.path.join(TEST_DATA_DIR, "jprm.json"),
+    TEST_DATA_DIR / "jprm.yaml",
+    TEST_DATA_DIR / "jprm.json",
 )
-def test_get_config_old(datafiles: LocalPath):
+def test_get_config_old(datafiles: Path):
     (datafiles / "jprm.yaml").rename(datafiles / "build.yaml")
-    assert jprm.get_config(datafiles) == json.load(datafiles / "jprm.json")
+    assert jprm.get_config(datafiles) == json_load(datafiles / "jprm.json")
 
 
-def test_invalid_manifest(tmpdir: LocalPath):
-    with open(tmpdir / "jprm.yaml", "wt") as fh:
+def test_invalid_manifest(tmp_path: Path):
+    with open(tmp_path / "jprm.yaml", "wt", encoding="utf8") as fh:
         fh.write("]]]")
-    assert jprm.get_config(tmpdir) is None
+    assert jprm.get_config(tmp_path) is None
 
 
-def test_no_manifest(tmpdir: LocalPath):
-    assert jprm.get_config(tmpdir) is None
+def test_no_manifest(tmp_path: Path):
+    assert jprm.get_config(tmp_path) is None
 
 
 @pytest.mark.parametrize(
@@ -65,9 +67,9 @@ def test_run_os_command(cmd, kw, res):
     assert jprm.run_os_command(cmd, **kw) == res
 
 
-def test_run_os_command_error(tmpdir: LocalPath):
+def test_run_os_command_error(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
-        jprm.run_os_command("echo", cwd=tmpdir / "potatoe")
+        jprm.run_os_command("echo", cwd=tmp_path / "potatoe")
 
 
 def test_version():

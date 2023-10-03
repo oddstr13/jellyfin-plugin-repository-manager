@@ -1,17 +1,16 @@
-import os
-import json
+import shutil
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
-from py._path.local import LocalPath
 from testfixtures import compare
 import jprm
 
-from .test_repo import TEST_DATA_DIR
+from .test_utils import TEST_DATA_DIR, json_load
 
 
 @pytest.mark.parametrize(
-    "input,args,output,guid",
+    "input_file,args,output_file,guid",
     [
         (
             "manifest_pluginAB.json",
@@ -52,20 +51,20 @@ from .test_repo import TEST_DATA_DIR
     ],
 )
 @pytest.mark.datafiles(
-    os.path.join(TEST_DATA_DIR, "manifest_pluginAB.json"),
-    os.path.join(TEST_DATA_DIR, "manifest_pluginAB2.json"),
-    os.path.join(TEST_DATA_DIR, "manifest_pluginB.json"),
+    TEST_DATA_DIR / "manifest_pluginAB.json",
+    TEST_DATA_DIR / "manifest_pluginAB2.json",
+    TEST_DATA_DIR / "manifest_pluginB.json",
 )
 def test_repo_remove(
-    input,
+    input_file,
     args,
-    output,
+    output_file,
     guid,
     cli_runner: CliRunner,
-    datafiles: LocalPath,
+    datafiles: Path,
 ):
-    manifest_file: LocalPath = datafiles / "repo.json"
-    (datafiles / input).copy(manifest_file)
+    manifest_file = datafiles / "repo.json"
+    shutil.copyfile(datafiles / input_file, manifest_file)
 
     result = cli_runner.invoke(
         jprm.cli, ["--verbosity=debug", "repo", "remove", str(manifest_file), *args]
@@ -78,8 +77,7 @@ def test_repo_remove(
         version = jprm.Version(args[1]).full()
         assert f"removed {guid} {version}" in result.stdout.splitlines(False)
 
-    with open(datafiles / output) as expected_fh, open(manifest_file) as actual_fh:
-        compare(
-            expected=json.load(expected_fh),
-            actual=json.load(actual_fh),
-        )
+    compare(
+        expected=json_load(datafiles / output_file),
+        actual=json_load(manifest_file),
+    )
