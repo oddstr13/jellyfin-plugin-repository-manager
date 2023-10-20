@@ -16,7 +16,7 @@ jobs:
       upload_url: ${{ steps.draft.outputs.upload_url }}
     steps:
       - name: Publish release
-        uses: release-drafter/release-drafter@v5.24.0
+        uses: release-drafter/release-drafter@v5.25.0
         id: draft
         env:
           GITHUB_TOKEN: ${{ github.token }}
