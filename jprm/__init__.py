@@ -956,12 +956,9 @@ def cli_repo_add(repo_path, plugins, url='', plugin_urls=[]):
         if not updated:
             repo_manifest.append(plugin_manifest)
 
-    tmpfile = repo_path + '.tmp'
-    with open(tmpfile, 'w') as fh:
-        logging.debug('Writing repo manifest to {}'.format(tmpfile))
+    with open(repo_path, 'w') as fh:
+        logging.debug('Writing repo manifest to {}'.format(repo_path))
         json.dump(repo_manifest, fh, indent=4)
-    logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
-    os.rename(tmpfile, repo_path)
 
 
 @cli_repo.command('list')
@@ -1054,12 +1051,9 @@ def cli_repo_remove(repo_path, plugin, version: Optional[Version]):
                 plugin_manifest['versions'].remove(release)
                 click.echo(f"removed {plugin_manifest.get('guid')} {version_str}")
 
-    tmpfile = repo_path + '.tmp'
-    with open(tmpfile, 'w') as fh:
-        logging.debug('Writing repo manifest to {}'.format(tmpfile))
+    with open(repo_path, 'w') as fh:
+        logging.debug('Writing repo manifest to {}'.format(repo_path))
         json.dump(repo_manifest, fh, indent=4)
-    logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
-    os.rename(tmpfile, repo_path)
     click.echo("foobar")
 
 
