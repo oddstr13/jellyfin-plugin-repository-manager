@@ -38,7 +38,7 @@ def test_get_config(datafiles: Path):
     TEST_DATA_DIR / "jprm.json",
 )
 def test_get_config_old(datafiles: Path):
-    (datafiles / "jprm.yaml").rename(datafiles / "build.yaml")
+    (datafiles / "jprm.yaml").replace(datafiles / "build.yaml")
     assert jprm.get_config(datafiles) == json_load(datafiles / "jprm.json")
 
 

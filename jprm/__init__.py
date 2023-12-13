@@ -960,8 +960,10 @@ def cli_repo_add(repo_path, plugins, url='', plugin_urls=[]):
     with open(tmpfile, 'w') as fh:
         logging.debug('Writing repo manifest to {}'.format(tmpfile))
         json.dump(repo_manifest, fh, indent=4)
+        fh.flush()
+        os.fsync(fh.fileno())
     logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
-    os.rename(tmpfile, repo_path)
+    os.replace(tmpfile, repo_path)
 
 
 @cli_repo.command('list')
@@ -1058,9 +1060,10 @@ def cli_repo_remove(repo_path, plugin, version: Optional[Version]):
     with open(tmpfile, 'w') as fh:
         logging.debug('Writing repo manifest to {}'.format(tmpfile))
         json.dump(repo_manifest, fh, indent=4)
+        fh.flush()
+        os.fsync(fh.fileno())
     logging.debug('Renaming {} to {}'.format(tmpfile, repo_path))
-    os.rename(tmpfile, repo_path)
-    click.echo("foobar")
+    os.replace(tmpfile, repo_path)
 
 
 ####################
