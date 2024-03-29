@@ -357,6 +357,10 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
                 projects.append(os.path.join(path, fn))
                 break
 
+    dbp_file = os.path.join(path, "Directory.Build.props")
+    if os.path.exists(dbp_file):
+        projects.append(dbp_file)
+
     for project in projects:
         set_project_version(project, version=version)
         set_project_framework(project, framework=dotnet_framework)
