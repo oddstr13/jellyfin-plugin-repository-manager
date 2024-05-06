@@ -100,6 +100,7 @@ def get_config(path):
             build_cfg = load_manifest(config_path)
             if build_cfg is not None:
                 return build_cfg
+    logger.warning("Failed to locate config file.")
     return None
 
 
@@ -820,10 +821,14 @@ def cli_plugin():
     help='Max number of cores to use during build (1)',
 )
 def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, max_cpu_count, version):
+    build_cfg = get_config(path)
+    if build_cfg is None:
+        raise click.UsageError('No build config found in `{}`'.format(path))
+
     with tempfile.TemporaryDirectory() as bintemp:
-        build_plugin(path, output=bintemp, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework,
+        build_plugin(path, output=bintemp, build_cfg=build_cfg, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework,
                      version=version, max_cpu_count=max_cpu_count)
-        filename = package_plugin(path, version=version, binary_path=bintemp, output=output)
+        filename = package_plugin(path, build_cfg=build_cfg, version=version, binary_path=bintemp, output=output)
         click.echo(filename)
 
 
