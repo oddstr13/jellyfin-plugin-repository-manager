@@ -35,11 +35,18 @@ inputs:
     required: false
     default: 'debug'
     description: 'The log verbosity of JPRM'
+  update-manifest:
+    required: false
+    default: false
+    description: 'Whether to update manifest.json with the built release'
 
 outputs:
   artifact:
     description: 'Returns the built plugin zip'
     value: ${{ steps.build.outputs.artifact }}
+  manifest:
+    description: 'Returns updated manifest.json path if update-manifest was set to true'
+    value: ${{ steps.build.outputs.manifest }}
 
 runs:
   using: composite
@@ -61,21 +68,26 @@ runs:
       shell: bash
       run: |-
         echo "::group::Building and Packaging"
-        
+
         if [[ -n "${{ inputs.dotnet-target }}" ]]; then
           DOTNET_FRAMEWORK="--dotnet-framework ${{ inputs.dotnet-target }}"
         else
           DOTNET_FRAMEWORD=""
         fi
-        
+
         if [[ -n "${{ inputs.version }}" ]]; then
           PLUGIN_VERSION="-v ${{ inputs.version }}"
         else
           PLUGIN_VERSION=""
         fi
-        
+
         artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} --max-cpu-count ${{ inputs.max-cpu-count }} ${DOTNET_FRAMEWORK})"
-        
+
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
+
+        if [[ "${{ inputs.update-target }}" == "true" ]]; then
+          jprm repo add -u "https://github.com/${GITHUB_REPOSITORY}" -U "https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${PLUGIN_VERSION}/$(basename $artifact)"
+        fi
+
         echo "::endgroup::"
