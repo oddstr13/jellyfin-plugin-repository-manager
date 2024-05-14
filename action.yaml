@@ -87,7 +87,7 @@ runs:
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
 
         if [[ "${{ inputs.update-manifest }}" == "true" ]]; then
-          python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} repo add -u "https://github.com/${GITHUB_REPOSITORY}" -U "https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${{ inputs.version }}/$(basename $artifact)" . $artifact
+          python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} repo add -u "https://github.com/${GITHUB_REPOSITORY}" -U "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${{ inputs.version }}/$(basename $artifact)" . $artifact
           echo "manifest.json updated"
         fi
 
