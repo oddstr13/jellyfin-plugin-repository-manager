@@ -65,7 +65,7 @@ runs:
         if [[ -n "${{ inputs.dotnet-target }}" ]]; then
           DOTNET_FRAMEWORK="--dotnet-framework ${{ inputs.dotnet-target }}"
         else
-          DOTNET_FRAMEWORD=""
+          DOTNET_FRAMEWORK=""
         fi
         
         if [[ -n "${{ inputs.version }}" ]]; then
