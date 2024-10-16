@@ -53,6 +53,10 @@ runs:
     - name: Setup JRPM Deps
       shell: bash
       run: |-
+        # PEP 668 can burn.
+        rm -f /usr/lib/python*/EXTERNALLY-MANAGED
+        python3 -m pip config set global.break-system-packages true
+
         python3 -m pip install -r ${{ github.action_path }}/requirements.txt
         echo "::endgroup::"
 
@@ -61,21 +65,21 @@ runs:
       shell: bash
       run: |-
         echo "::group::Building and Packaging"
-        
+
         if [[ -n "${{ inputs.dotnet-target }}" ]]; then
           DOTNET_FRAMEWORK="--dotnet-framework ${{ inputs.dotnet-target }}"
         else
           DOTNET_FRAMEWORK=""
         fi
-        
+
         if [[ -n "${{ inputs.version }}" ]]; then
           PLUGIN_VERSION="-v ${{ inputs.version }}"
         else
           PLUGIN_VERSION=""
         fi
-        
+
         artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} --max-cpu-count ${{ inputs.max-cpu-count }} ${DOTNET_FRAMEWORK})"
-        
+
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
         echo "::endgroup::"
