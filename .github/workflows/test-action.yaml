@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .Net
         uses: actions/setup-dotnet@v4
@@ -22,7 +22,7 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Checkout Jellyfin Template Plugin
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: 'jellyfin/jellyfin-plugin-template'
           path: 'plugin-template'
