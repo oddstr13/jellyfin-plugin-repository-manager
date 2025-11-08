@@ -52,9 +52,10 @@ runs:
 
     - name: Setup JRPM Deps
       shell: bash
-      run: |-
+      env:
         # PEP 668 can burn.
-        rm -f /usr/lib/python*/EXTERNALLY-MANAGED
+        PIP_BREAK_SYSTEM_PACKAGES: '1'
+      run: |-
         python3 -m pip config set global.break-system-packages true
 
         python3 -m pip install -r ${{ github.action_path }}/requirements.txt
