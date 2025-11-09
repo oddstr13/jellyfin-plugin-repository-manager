@@ -1,21 +1,29 @@
 {
     "extends": [
-        "config:base",
+        "config:recommended",
         ":dependencyDashboard",
         ":timezone(Etc/UTC)",
         ":preserveSemverRanges"
     ],
-    "labels": ["dependencies"],
+    "labels": [
+        "dependencies"
+    ],
     "internalChecksFilter": "strict",
     "rebaseWhen": "conflicted",
     "packageRules": [
         {
             "description": "Add the ci and github-actions GitHub label to GitHub Action bump PRs",
-            "matchManagers": ["github-actions"],
-            "labels": ["ci-dependencies"]
+            "matchManagers": [
+                "github-actions"
+            ],
+            "labels": [
+                "ci-dependencies"
+            ]
         }
     ],
     "pip_requirements": {
-        "fileMatch": ["requirements(-[a-z]+)?\\.txt$"]
+        "managerFilePatterns": [
+            "/requirements(-[a-z]+)?\\.txt$/"
+        ]
     }
 }
