@@ -30,7 +30,7 @@ import tabulate
 logger = logging.getLogger("jprm")
 click_log.basic_config(logger)
 
-__version__ = "1.1.0"
+__version__ = "1.1.2"
 JSON_METADATA_FILE = "meta.json"
 DEFAULT_IMAGE_FILE = "image.png"
 DEFAULT_FRAMEWORK = "netstandard2.1"
