@@ -35,11 +35,18 @@ inputs:
     required: false
     default: 'debug'
     description: 'The log verbosity of JPRM'
+  update-manifest:
+    required: false
+    default: false
+    description: 'Whether to update manifest.json with the built release'
 
 outputs:
   artifact:
     description: 'Returns the built plugin zip'
     value: ${{ steps.build.outputs.artifact }}
+  manifest:
+    description: 'Returns updated manifest.json path if update-manifest was set to true'
+    value: ${{ steps.build.outputs.manifest }}
 
 runs:
   using: composite
@@ -83,4 +90,10 @@ runs:
 
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
+
+        if [[ "${{ inputs.update-manifest }}" == "true" ]]; then
+          python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} repo add -u "https://github.com/${GITHUB_REPOSITORY}" -U "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${{ inputs.version }}/$(basename $artifact)" . $artifact
+          echo "manifest.json updated"
+        fi
+
         echo "::endgroup::"
