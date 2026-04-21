@@ -30,7 +30,7 @@ jobs:
 
       - name: Dotenv Action
         id: dotenv
-        uses: falti/dotenv-action@v1.1.5
+        uses: falti/dotenv-action@v1.2
         with:
           path: ./.github/release-next.env
 
