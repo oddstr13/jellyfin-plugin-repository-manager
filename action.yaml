@@ -19,6 +19,10 @@ inputs:
     required: false
     default: ''
     description: 'Overwrite the detected version of the plugin (default: "")'
+  changelog:
+    required: false
+    default: ''
+    description: 'Overwrite the detected changelog of the plugin, supports multiline values (default: "")'
   dotnet-config:
     required: false
     default: 'Release'
@@ -64,22 +68,38 @@ runs:
     - id: build
       name: Run JPRM build
       shell: bash
+      env:
+        GH_ACTION_PATH: ${{ github.action_path }}
+        INPUTS_CHANGELOG: ${{ inputs.changelog }}
+        INPUTS_DOTNET_CONFIG: ${{ inputs.dotnet-config }}
+        INPUTS_DOTNET_TARGET: ${{ inputs.dotnet-target }}
+        INPUTS_MAX_CPU_COUNT: ${{ inputs.max-cpu-count }}
+        INPUTS_OUTPUT: ${{ inputs.output }}
+        INPUTS_PATH: ${{ inputs.path }}
+        INPUTS_VERBOSITY: ${{ inputs.verbosity }}
+        INPUTS_VERSION: ${{ inputs.version }}
       run: |-
         echo "::group::Building and Packaging"
 
-        if [[ -n "${{ inputs.dotnet-target }}" ]]; then
-          DOTNET_FRAMEWORK="--dotnet-framework ${{ inputs.dotnet-target }}"
+        if [[ -n "${INPUTS_DOTNET_TARGET}" ]]; then
+          DOTNET_FRAMEWORK="--dotnet-framework ${INPUTS_DOTNET_TARGET}"
         else
           DOTNET_FRAMEWORK=""
         fi
 
-        if [[ -n "${{ inputs.version }}" ]]; then
-          PLUGIN_VERSION="-v ${{ inputs.version }}"
+        if [[ -n "${INPUTS_VERSION}" ]]; then
+          PLUGIN_VERSION="-v ${INPUTS_VERSION}"
         else
           PLUGIN_VERSION=""
         fi
 
-        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} --max-cpu-count ${{ inputs.max-cpu-count }} ${DOTNET_FRAMEWORK})"
+        if [[ -n "${INPUTS_CHANGELOG}" ]]; then
+          PLUGIN_CHANGELOG="--changelog \"${INPUTS_CHANGELOG}\""
+        else
+          PLUGIN_CHANGELOG=""
+        fi
+
+        artifact="$(python3 ${GH_ACTION_PATH}/jprm/__init__.py --verbosity=${INPUTS_VERBOSITY} plugin build ${INPUTS_PATH} -o ${INPUTS_OUTPUT} ${PLUGIN_VERSION} ${PLUGIN_CHANGELOG} --dotnet-configuration ${INPUTS_DOTNET_CONFIG} --max-cpu-count ${INPUTS_MAX_CPU_COUNT} ${DOTNET_FRAMEWORK})"
 
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT
