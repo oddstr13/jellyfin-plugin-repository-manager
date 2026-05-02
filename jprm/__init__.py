@@ -393,7 +393,7 @@ def build_plugin(path, output=None, build_cfg=None, version=None, dotnet_config=
     logger.info(stdout)
 
 
-def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=None, bundle=False):
+def package_plugin(path, build_cfg=None, version=None, changelog=None, binary_path=None, output=None, bundle=False):
     if build_cfg is None:
         build_cfg = get_config(path)
 
@@ -449,7 +449,7 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
 
             build_cfg['image'] = image_name
 
-        meta = generate_metadata(build_cfg, version=version)
+        meta = generate_metadata(build_cfg, version=version, changelog=changelog)
         meta_tempfile = os.path.join(tempdir, JSON_METADATA_FILE)
         with open(meta_tempfile, 'w') as fh:
             json.dump(meta, fh, sort_keys=True, indent=4)
@@ -473,13 +473,16 @@ def package_plugin(path, build_cfg=None, version=None, binary_path=None, output=
     return output_path
 
 
-def generate_metadata(build_cfg, version=None, build_date=None):
+def generate_metadata(build_cfg, version=None, build_date=None, changelog=None):
 
     if version is None:
         version = build_cfg['version']
 
     if version is not None:
         version = Version(version).full()
+
+    if not changelog:
+        changelog = build_cfg['changelog']
 
     if build_date is None:
         build_date = datetime.datetime.utcnow().isoformat(timespec='seconds') + 'Z'
@@ -493,7 +496,7 @@ def generate_metadata(build_cfg, version=None, build_date=None):
         "category": build_cfg['category'],
         ########
         "version": version,
-        "changelog": build_cfg['changelog'],
+        "changelog": changelog,
         "targetAbi": build_cfg['targetAbi'],
 #        "sourceUrl": "{url}/{slug}/{slug}_{version}.zip".format(
 #            url=repo_url.rstrip('/'),
@@ -807,6 +810,10 @@ def cli_plugin():
     default=None,
     help='Plugin version',
 )
+@click.option('--changelog',
+    default=None,
+    help='Plugin changelog',
+)
 @click.option('--dotnet-configuration',
     default='Release',
     help='Dotnet configuration',
@@ -820,7 +827,7 @@ def cli_plugin():
     type=int,
     help='Max number of cores to use during build (1)',
 )
-def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, max_cpu_count, version):
+def cli_plugin_build(path, output, version, changelog, dotnet_configuration, dotnet_framework, max_cpu_count):
     build_cfg = get_config(path)
     if build_cfg is None:
         raise click.UsageError('No build config found in `{}`'.format(path))
@@ -828,7 +835,7 @@ def cli_plugin_build(path, output, dotnet_configuration, dotnet_framework, max_c
     with tempfile.TemporaryDirectory() as bintemp:
         build_plugin(path, output=bintemp, build_cfg=build_cfg, dotnet_config=dotnet_configuration, dotnet_framework=dotnet_framework,
                      version=version, max_cpu_count=max_cpu_count)
-        filename = package_plugin(path, build_cfg=build_cfg, version=version, binary_path=bintemp, output=output)
+        filename = package_plugin(path, build_cfg=build_cfg, version=version, changelog=changelog, binary_path=bintemp, output=output)
         click.echo(filename)
 
 

@@ -19,6 +19,10 @@ inputs:
     required: false
     default: ''
     description: 'Overwrite the detected version of the plugin (default: "")'
+  changelog:
+    required: false
+    default: ''
+    description: 'Overwrite the detected changelog of the plugin, supports multiline values (default: "")'
   dotnet-config:
     required: false
     default: 'Release'
@@ -64,6 +68,8 @@ runs:
     - id: build
       name: Run JPRM build
       shell: bash
+      env:
+        JPRM_CHANGELOG: ${{ inputs.changelog }}
       run: |-
         echo "::group::Building and Packaging"
 
@@ -79,7 +85,13 @@ runs:
           PLUGIN_VERSION=""
         fi
 
-        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} --dotnet-configuration ${{ inputs.dotnet-config }} --max-cpu-count ${{ inputs.max-cpu-count }} ${DOTNET_FRAMEWORK})"
+        if [[ -n "${JPRM_CHANGELOG}" ]]; then
+          PLUGIN_CHANGELOG="--changelog \"${JPRM_CHANGELOG}\""
+        else
+          PLUGIN_CHANGELOG=""
+        fi
+
+        artifact="$(python3 ${{ github.action_path }}/jprm/__init__.py --verbosity=${{ inputs.verbosity }} plugin build ${{ inputs.path }} -o ${{ inputs.output }} ${PLUGIN_VERSION} ${PLUGIN_CHANGELOG} --dotnet-configuration ${{ inputs.dotnet-config }} --max-cpu-count ${{ inputs.max-cpu-count }} ${DOTNET_FRAMEWORK})"
 
         echo "Artifact: ${artifact}"
         echo "artifact=${artifact}" >> $GITHUB_OUTPUT

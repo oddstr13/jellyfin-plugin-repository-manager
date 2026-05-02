@@ -26,7 +26,7 @@ If there are multiple, the first file found is used.
 | `category` | string | ✔️ | `Authentication` / `Channels` / `General` / `Live TV` / `Metadata` / `Notifications` |
 | `owner` | string | ✔️ | Name of maintainer |
 | `artifacts` | list[string] | ✔️ | List of artifacts to include in the plugin zip |
-| `changelog` | string | ✔️ | Changes since last release |
+| `changelog` | string | ✔️ | Changes since last release. Can be overridden by `plugin build --changelog` or the action `changelog` input. |
 
 [DEFAULT_IMAGE_FILE]: https://github.com/oddstr13/jellyfin-plugin-repository-manager/blob/a2267abe5cbffe602dd8dd0d5c532ea32da7bafe/jprm/__init__.py#L35
 [DEFAULT_FRAMEWORK]: https://github.com/oddstr13/jellyfin-plugin-repository-manager/blob/a2267abe5cbffe602dd8dd0d5c532ea32da7bafe/jprm/__init__.py#L36
